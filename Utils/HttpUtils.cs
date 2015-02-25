@@ -8,30 +8,66 @@ using System.Threading.Tasks;
 
 namespace SeafClient.Utils
 {
+    /// <summary>
+    /// Helper class for the HttpClient from System.Net.Http
+    /// </summary>
     static class HttpUtils
     {
-
-        public static async Task<HttpResponse> GetAsync(string uri, IEnumerable<KeyValuePair<string, string>> headerInfo, IList<KeyValuePair<string, string>> getParams)
+        /// <summary>
+        /// Sends a HTTP GET request to the given URI
+        /// </summary>
+        /// <param name="uri">The uri to get</param>
+        /// <param name="headerInfo">Additional headers to be added to the HTTP GET request</param>
+        /// <param name="getParams">Parameters (will be added to the URI with ?key1=value1&key2=value2 etc.</param>
+        /// <returns>The http response</returns>
+        public static async Task<HttpResponseMessage> GetAsync(string uri, IEnumerable<KeyValuePair<string, string>> headerInfo)
         {
             using (HttpClient client = new HttpClient())
             {
                 client.DefaultRequestHeaders.Referrer = new Uri(uri);
 
                 foreach (var hi in headerInfo)
-                    client.DefaultRequestHeaders.Add(hi.Key, hi.Value);
-                
-                // for http get, the params are appended to the uri
-                for (int i = 0; i < getParams.Count; i++)                
-                    uri += (i == 0 ? "?" : "&") + getParams[i].Key + "=" + getParams[i].Value;                
+                    client.DefaultRequestHeaders.Add(hi.Key, hi.Value);                               
 
-                var result = await client.GetAsync(uri);                
+                HttpResponseMessage result = await client.GetAsync(uri);                
 
                 string s = await result.Content.ReadAsStringAsync();
-                return new HttpResponse(result.StatusCode, s);
+                return result;
             }
         }
 
-        public static async Task<HttpResponse> PostAsync(string uri, IEnumerable<KeyValuePair<string, string>> headerInfo, IEnumerable<KeyValuePair<string, string>> postParams)
+        /// <summary>
+        /// Sends a HTTP POST request to the given URI
+        /// </summary>
+        /// <param name="uri">The uri to post to</param>
+        /// <param name="headerInfo">Additional headers to be added to the HTTP POST request</param>
+        /// <param name="getParams">Post parameters</param>
+        /// <returns>The http response</returns>
+        public static async Task<HttpResponseMessage> PostAsync(string uri, IEnumerable<KeyValuePair<string, string>> headerInfo, IEnumerable<KeyValuePair<string, string>> postParams)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Referrer = new Uri(uri);                
+
+                foreach (var hi in headerInfo)
+                    client.DefaultRequestHeaders.Add(hi.Key, hi.Value);
+
+                HttpContent content = new FormUrlEncodedContent(postParams);                
+                var result = await client.PostAsync(uri, content);
+
+                string s = await result.Content.ReadAsStringAsync();
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// Sends a HTTP DELETE request to the given URI
+        /// </summary>
+        /// <param name="uri">The uri to delete</param>
+        /// <param name="headerInfo">Additional headers to be added to the HTTP DELETE request</param>
+        /// <param name="getParams">Delete parameters</param>
+        /// <returns>The http response</returns>
+        public static async Task<HttpResponseMessage> DeleteAsync(string uri, IEnumerable<KeyValuePair<string, string>> headerInfo)
         {
             using (HttpClient client = new HttpClient())
             {
@@ -40,15 +76,17 @@ namespace SeafClient.Utils
                 foreach (var hi in headerInfo)
                     client.DefaultRequestHeaders.Add(hi.Key, hi.Value);
 
-                HttpContent content = new FormUrlEncodedContent(postParams);            
-                var result = await client.PostAsync(uri, content);
+                var result = await client.DeleteAsync(uri);
 
                 string s = await result.Content.ReadAsStringAsync();
-                return new HttpResponse(result.StatusCode, s);
+                return result;
             }
         }
     }
 
+    /// <summary>
+    /// Describes the result of an http request
+    /// </summary>
     public class HttpResponse
     {
         public HttpStatusCode StatusCode { get; set; }

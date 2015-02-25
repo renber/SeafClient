@@ -4,15 +4,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SeafClient.ResponseTypes
+namespace SeafClient.Types
 {
     /// <summary>
     /// Represents a seafile library
     /// </summary>
-    public class Library
+    public class SeafLibrary
     {
-        public string ID { get; set; }
+        public string Id { get; set; }
         public string Name { get; set; }
+
+        public string Owner { get; set; }
+
+        [JsonProperty("mtime")]
+        public int Timestamp { get; set; }
 
         [JsonProperty("desc")]
         public string Description { get; set; }

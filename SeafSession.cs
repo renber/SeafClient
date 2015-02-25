@@ -1,11 +1,14 @@
 ﻿using Newtonsoft.Json;
 using SeafClient.CommandParameters;
-using SeafClient.ResponseTypes;
+using SeafClient.Requests;
+using SeafClient.Exceptions;
+using SeafClient.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace SeafClient
 {
@@ -16,6 +19,11 @@ namespace SeafClient
     /// </summary>
     public class SeafSession
     {
+        /// <summary>
+        /// The user this session belongs to
+        /// </summary>
+        public string Username { get; private set; }
+
         public string ServerUri { get; private set; }
         public string AuthToken { get; private set; }
 
@@ -25,15 +33,20 @@ namespace SeafClient
         /// <param name="serverUrl">The server url to connect to (including protocol (http or https) and port)</param>
         /// <param name="username">The username to login with</param>
         /// <param name="pwd">The password for the given user</param>
-        public static async Task<SeafSession> EstablishAsync(string serverUri, string username, string pwd)
+        public static async Task<SeafSession> Establish(string serverUri, string username, string pwd)
         {
+            if (!serverUri.EndsWith("/"))
+                serverUri += "/";
+
             // authenticate the user
-            var response = await SeafWebAPI.SendCommandAsync<AuthResponse>(serverUri, SeafCommand.Authenticate, new AuthParams(username, pwd));
-            return new SeafSession(serverUri, response.Token);
+            AuthRequest req = new AuthRequest(username, pwd);
+            var response = await SeafWebAPI.SendRequestAsync(serverUri, req);
+            return new SeafSession(username, serverUri, response.Token);  
         } 
 
-        private SeafSession(string serverUri, string authToken)
+        private SeafSession(string username, string serverUri, string authToken)
         {
+            Username = username;
             ServerUri = serverUri;
             AuthToken = authToken;
         }
@@ -44,24 +57,113 @@ namespace SeafClient
         /// <returns></returns>
         public async Task<AccountInfo> CheckAccountInfo()
         {
-            return await SeafWebAPI.SendCommandAsync<AccountInfo>(ServerUri, AuthToken, SeafCommand.CheckAccountInfo);
+            AccountInfoRequest req = new AccountInfoRequest(AuthToken);
+
+            return await SeafWebAPI.SendRequestAsync<AccountInfo>(ServerUri, req);
         }
 
-        public async Task<List<Library>> ListLibraries()
+        /// <summary>
+        /// Retrieve the avatar of the current user
+        /// </summary>        
+        public async Task<UserAvatar> GetUserAvatar(int size)
         {
-            return await SeafWebAPI.SendCommandAsync <List<Library>>(ServerUri, AuthToken, SeafCommand.ListLibraries);
+            return await GetUserAvatar(Username, size);
         }
 
-        public async Task<List<DirEntry>> ListDirectory(Library library, string directory)
+        /// <summary>
+        /// Retrieve the avatar of the given user
+        /// </summary>        
+        public async Task<UserAvatar> GetUserAvatar(string username, int size)
         {
-            return await SeafWebAPI.SendCommandAsync<List<DirEntry>>(ServerUri, AuthToken, SeafCommand.ListDirectoryEntries, 
-                new DirectoryParams(library.ID, directory));
+            UserAvatarRequest req = new UserAvatarRequest(AuthToken, username, size);
+            return await SeafWebAPI.SendRequestAsync(ServerUri, req);
         }
 
-        public async Task<string> GetFileDownloadLink(Library library, string path)
+        /// <summary>
+        /// List all libraries of the current user (exlcudign shared libraries from other users)
+        /// </summary>
+        /// <returns></returns>
+        public async Task<List<SeafLibrary>> ListLibraries()
         {
-            return await SeafWebAPI.SendCommandAsync<string>(ServerUri, AuthToken, SeafCommand.GetFileDownloadLink,
-                new FileParams(library.ID, path));
+            ListLibrariesRequest req = new ListLibrariesRequest(AuthToken);
+            return await SeafWebAPI.SendRequestAsync(ServerUri, req);            
         }
+
+        /// <summary>
+        /// List the content of the given directory of the given linrary
+        /// </summary>
+        /// <param name="library"></param>
+        /// <param name="directory"></param>
+        /// <returns></returns>
+        public async Task<List<DirEntry>> ListDirectory(SeafLibrary library, string directory)
+        {
+            ListDirectoryEntriesRequest req = new ListDirectoryEntriesRequest(AuthToken, library.Id, directory);
+            return await SeafWebAPI.SendRequestAsync(ServerUri, req); 
+        }
+
+        /// <summary>
+        /// Create the given directory in the given library
+        /// </summary>
+        /// <param name="library"></param>
+        /// <param name="directory"></param>
+        /// <returns></returns>
+        public async Task<bool> CreateDirectory(SeafLibrary library, string directory)
+        {
+            CreateDirectoryRequest req = new CreateDirectoryRequest(AuthToken, library.Id, directory);
+            return await SeafWebAPI.SendRequestAsync(ServerUri, req); 
+        }
+
+        /// <summary>
+        /// Delete the given directory in the given library
+        /// </summary>
+        /// <param name="library"></param>
+        /// <param name="directory"></param>
+        /// <returns></returns>
+        public async Task<bool> DeleteDirectory(SeafLibrary library, string directory)
+        {
+            return await DeleteFile(library, directory);   
+        }
+
+        /// <summary>
+        /// Delete the given directory in the given library
+        /// </summary>
+        /// <param name="library"></param>
+        /// <param name="directory"></param>
+        /// <returns></returns>
+        public async Task<bool> DeleteFile(SeafLibrary library, string filePath)
+        {
+            DeleteDirEntryRequest req = new DeleteDirEntryRequest(AuthToken, library.Id, filePath);
+            return await SeafWebAPI.SendRequestAsync(ServerUri, req); 
+        }
+
+        /// <summary>
+        /// Get a download link for the given file
+        /// </summary>
+        /// <param name="library"></param>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public async Task<string> GetFileDownloadLink(SeafLibrary library, string path)
+        {
+            GetFileDownloadLinkRequest req = new GetFileDownloadLinkRequest(AuthToken, library.Id, path);
+            return await SeafWebAPI.SendRequestAsync(ServerUri, req);             
+        }
+
+        /// <summary>
+        /// Uploads a single file
+        /// </summary>
+        /// <param name="uploadLink"></param>
+        /// <param name="targetFilename"></param>
+        /// <param name="fileContent"></param>
+        /// <returns></returns>
+        public async Task<bool> UploadSingle(SeafLibrary library, string targetFilename, Stream fileContent, Action<float> progressCallback)
+        {
+            // to upload files we need to get a uplaod link first
+            GetUploadLinkRequest req = new GetUploadLinkRequest(AuthToken, library.Id);
+            string uploadLink = await SeafWebAPI.SendRequestAsync(ServerUri, req);
+
+            UploadRequest upReq = new UploadRequest(AuthToken, uploadLink, targetFilename, fileContent, progressCallback);
+            return await SeafWebAPI.SendRequestAsync(ServerUri, upReq);
+        }
+        
     }
 }

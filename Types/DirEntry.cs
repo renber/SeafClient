@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SeafClient.ResponseTypes
+namespace SeafClient.Types
 {
     /// <summary>
     /// Entry of a directory (file or directory)
@@ -14,6 +14,10 @@ namespace SeafClient.ResponseTypes
         public DirEntryType Type { get; set; }
 
         public string Name { get; set; }
+
+        /// <summary>
+        /// File size (only if Type is File)
+        /// </summary>
         public long Size { get; set; }
     }
 

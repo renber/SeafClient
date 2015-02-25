@@ -5,82 +5,53 @@ using SeafClient.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace SeafClient
 {
-    static class SeafWebAPI
+    public static class SeafWebAPI
     {
 
         /// <summary>
-        /// Sends the given command to the seafile server and returns the result as JSON string
+        /// Send the given request to the given seafile server
         /// </summary>
-        public static async Task<T> SendCommandAsync<T>(string serverUri, string sessionToken, SeafCommand command, SeafCommandParams parameters = null)
+        /// <typeparam name="T"></typeparam>
+        /// <param name="serverUri"></param>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public static async Task<T> SendRequestAsync<T>(string serverUri, SeafRequest<T> request)
         {
-            if (parameters == null)
-                parameters = SeafCommandParams.None;
-
-            if (parameters.GetType() != command.GetCommandParamType())
-                throw new ArgumentException("Wrong param type for command " + command.ToString());           
+            HttpResponseMessage response;
 
             if (!serverUri.EndsWith("/"))
                 serverUri += "/";
 
-            string targetUri = serverUri + command.GetWebUri();
+            string targetUri = serverUri + request.CommandUri;
 
-            List<KeyValuePair<string, string>> pLst = new List<KeyValuePair<string, string>>(parameters.ToList());
-            // some parameters go directly to the uri
-            for (int i = pLst.Count - 1; i >= 0; i--)
+            switch (request.HttpAccessMethod)
             {
-                string pName = "{param:"+pLst[i].Key+"}";
-                if (targetUri.Contains(pName))
-                {
-                    targetUri = targetUri.Replace(pName, pLst[i].Value);
-                    pLst.RemoveAt(i);
-                }
-            }
-            
-            List<KeyValuePair<string, string>> headers = new List<KeyValuePair<string, string>>();
-            if (!String.IsNullOrEmpty(sessionToken))
-                headers.Add(new KeyValuePair<string,string>("Authorization", "Token " + sessionToken));
-
-            headers.Add(new KeyValuePair<string,string>("Accept", "application/json; indent=4"));
-
-            HttpResponse response;
-
-            switch (command.GetAccessMethod())
-            {
-                case "POST":
-                    response = await HttpUtils.PostAsync(targetUri, headers, pLst);
+                case HttpAccessMethod.Get:
+                    response = await HttpUtils.GetAsync(targetUri, request.GetAdditionalHeaders());
                     break;
-                case "GET":
-                    response = await HttpUtils.GetAsync(targetUri, headers, pLst);
+                case HttpAccessMethod.Post:
+                    response = await HttpUtils.PostAsync(targetUri, request.GetAdditionalHeaders(), request.GetPostParameters());
+                    break;
+                case HttpAccessMethod.Delete:
+                    response = await HttpUtils.DeleteAsync(targetUri, request.GetAdditionalHeaders());
+                    break;
+                case HttpAccessMethod.Custom:
+                    response = await request.SendRequestCustomizedAsync(serverUri);
                     break;
                 default:
-                    throw new Exception("Unsupported access method: " + command.GetAccessMethod());
+                    throw new ArgumentException("Unsupported method: " + request.HttpAccessMethod.ToString());
             }
 
-            if (response.StatusCode != System.Net.HttpStatusCode.OK)
-            {
-                throw new SeafException((int)response.StatusCode, response.Content);
-            }
+            if (request.WasSuccessful(response))
+                return await request.ParseResponseAsync(response);
             else
-            {
-                if (typeof(T) == typeof(string))
-                    return (T)(object)response.Content.ToString();
-                else
-                    return JsonConvert.DeserializeObject<T>(response.Content);
-            }                
-        }
-
-        /// <summary>
-        /// Sends the given command to the seafile server and returns the result as JSON string
-        /// without specifying an authentication token (only works with the Authenticate command)
-        /// </summary>
-        public static async Task<T> SendCommandAsync<T>(string serverUri, SeafCommand command, SeafCommandParams parameters)
-        {
-            return await SendCommandAsync<T>(serverUri, String.Empty, command, parameters);
+                throw new SeafException(response.StatusCode, request.GetErrorDescription(response));
         }
     }
 }
