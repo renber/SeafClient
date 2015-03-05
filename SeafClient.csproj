@@ -37,7 +37,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CommandParameters\DirectoryEntryParams.cs" />
     <Compile Include="Requests\AccountInfoRequest.cs" />
     <Compile Include="Requests\AuthRequest.cs" />
     <Compile Include="Exceptions\SeafException.cs" />
@@ -47,10 +46,11 @@
     <Compile Include="Requests\GetUploadLinkRequest.cs" />
     <Compile Include="Requests\ListDirectoryEntriesRequest.cs" />
     <Compile Include="Requests\ListLibrariesRequest.cs" />
+    <Compile Include="Requests\ListSharedLibrariesRequest.cs" />
     <Compile Include="Requests\SessionRequest.cs" />
     <Compile Include="Requests\UploadRequest.cs" />
     <Compile Include="Requests\UserAvatarRequest.cs" />
-    <Compile Include="Types\DirEntry.cs" />
+    <Compile Include="Types\SeafDirEntry.cs" />
     <Compile Include="Types\SeafLibrary.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SeafRequest.cs" />

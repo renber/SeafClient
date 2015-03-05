@@ -8,7 +8,7 @@ namespace SeafClient.Types
     /// <summary>
     /// Entry of a directory (file or directory)
     /// </summary>
-    public class DirEntry
+    public class SeafDirEntry
     {
         public string ID { get; set; }
         public DirEntryType Type { get; set; }
@@ -19,11 +19,16 @@ namespace SeafClient.Types
         /// File size (only if Type is File)
         /// </summary>
         public long Size { get; set; }
+
+        /// <summary>
+        /// The path of this item in its library
+        /// </summary>
+        public string Path { get; set; }
     }
 
     public enum DirEntryType
     {
-        File,
+        File,        
         Dir
     }
 }

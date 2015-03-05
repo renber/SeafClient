@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using SeafClient.CommandParameters;
 using SeafClient.Requests;
 using SeafClient.Exceptions;
 using SeafClient.Types;
@@ -90,15 +89,33 @@ namespace SeafClient
         }
 
         /// <summary>
+        /// Return all shared libraries of the current user
+        /// </summary>
+        /// <returns></returns>
+        public async Task<List<SeafLibrary>> ListSharedLibraries()
+        {
+            ListSharedLibrariesRequest req = new ListSharedLibrariesRequest(AuthToken);
+            return await SeafWebAPI.SendRequestAsync(ServerUri, req);
+        }
+
+        /// <summary>
         /// List the content of the given directory of the given linrary
         /// </summary>
         /// <param name="library"></param>
         /// <param name="directory"></param>
         /// <returns></returns>
-        public async Task<List<DirEntry>> ListDirectory(SeafLibrary library, string directory)
+        public async Task<List<SeafDirEntry>> ListDirectory(SeafLibrary library, string directory)
         {
+            if (!directory.EndsWith("/"))
+                directory += "/";
+
             ListDirectoryEntriesRequest req = new ListDirectoryEntriesRequest(AuthToken, library.Id, directory);
-            return await SeafWebAPI.SendRequestAsync(ServerUri, req); 
+            var dLst = await SeafWebAPI.SendRequestAsync(ServerUri, req);
+            // set the path of the items              
+
+            foreach (var d in dLst)
+                d.Path = directory + d.Name;
+            return dLst;
         }
 
         /// <summary>
@@ -155,13 +172,13 @@ namespace SeafClient
         /// <param name="targetFilename"></param>
         /// <param name="fileContent"></param>
         /// <returns></returns>
-        public async Task<bool> UploadSingle(SeafLibrary library, string targetFilename, Stream fileContent, Action<float> progressCallback)
+        public async Task<bool> UploadSingle(SeafLibrary library, string targetDirectory, string targetFilename, Stream fileContent, Action<float> progressCallback)
         {
             // to upload files we need to get a uplaod link first
             GetUploadLinkRequest req = new GetUploadLinkRequest(AuthToken, library.Id);
             string uploadLink = await SeafWebAPI.SendRequestAsync(ServerUri, req);
 
-            UploadRequest upReq = new UploadRequest(AuthToken, uploadLink, targetFilename, fileContent, progressCallback);
+            UploadRequest upReq = new UploadRequest(AuthToken, uploadLink, targetDirectory, targetFilename, fileContent, progressCallback);
             return await SeafWebAPI.SendRequestAsync(ServerUri, upReq);
         }
         

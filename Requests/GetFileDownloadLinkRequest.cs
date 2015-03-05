@@ -52,7 +52,7 @@ namespace SeafClient.Requests
         public override async System.Threading.Tasks.Task<string> ParseResponseAsync(HttpResponseMessage msg)
         {
             string content = await msg.Content.ReadAsStringAsync();
-            return content;
+            return content.Trim('\"');
         }
     }
 }

@@ -9,7 +9,7 @@ namespace SeafClient.Requests
     /// <summary>
     /// Request to receive the contents of a directory
     /// </summary>
-    public class ListDirectoryEntriesRequest : SessionRequest<List<DirEntry>>
+    public class ListDirectoryEntriesRequest : SessionRequest<List<SeafDirEntry>>
     {
         public string LibraryId { get; set; }
 

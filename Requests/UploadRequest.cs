@@ -21,6 +21,8 @@ namespace SeafClient.Requests
 
         public string UploadUri { get; set; }
 
+        public string TargetDirectory {get; set;}
+
         List<UploadFileInfo> files = new List<UploadFileInfo>();        
 
         public List<UploadFileInfo> Files
@@ -41,13 +43,36 @@ namespace SeafClient.Requests
             get { return HttpAccessMethod.Custom; }
         }
 
-        public UploadRequest(string authToken, string uploadUri, string filename, Stream fileContent, Action<float> progressCallback)
+        /// <summary>
+        /// Create an upload request for a single file
+        /// </summary>
+        /// <param name="authToken"></param>
+        /// <param name="uploadUri"></param>
+        /// <param name="filename"></param>
+        /// <param name="fileContent"></param>
+        /// <param name="progressCallback"></param>
+        public UploadRequest(string authToken, string uploadUri, string targetDirectory, string filename, Stream fileContent, Action<float> progressCallback)            
+            : this(authToken, uploadUri, targetDirectory, progressCallback, new UploadFileInfo(filename, fileContent))
+        {            
+            // --
+        }
+
+        /// <summary>
+        /// Create an upload request for multiple file
+        /// </summary>
+        /// <param name="authToken"></param>
+        /// <param name="uploadUri"></param>
+        /// <param name="filename"></param>
+        /// <param name="fileContent"></param>
+        /// <param name="progressCallback"></param>
+        public UploadRequest(string authToken, string uploadUri, string targetDirectory, Action<float> progressCallback, params UploadFileInfo[] uploadFiles)
             : base(authToken)
         {
             UploadUri = uploadUri;
             UploadProgress = progressCallback;
+            TargetDirectory = targetDirectory;
 
-            files.Add(new UploadFileInfo() { Filename = filename, FileContent = fileContent });
+            files.AddRange(uploadFiles);            
         }
 
         public override async Task<bool> ParseResponseAsync(HttpResponseMessage msg)
@@ -79,7 +104,11 @@ namespace SeafClient.Requests
                 }                
 
                 // the parent dir to upload the file to
-                var dirContent = new StringContent("/", Encoding.GetEncoding("ASCII"));
+                string tDir = TargetDirectory;
+                if (!tDir.StartsWith("/"))
+                    tDir = "/" + tDir;
+
+                var dirContent = new StringContent(tDir, Encoding.GetEncoding("ASCII"));
                 dirContent.Headers.ContentType = null;
                 dirContent.Headers.TryAddWithoutValidation("Content-Disposition", @"form-data; name=""parent_dir""");
                 request.Add(dirContent);  
@@ -90,19 +119,24 @@ namespace SeafClient.Requests
                 request.Headers.ContentType = null;
                 request.Headers.TryAddWithoutValidation("Content-Type", "multipart/form-data; boundary=" + boundary);                
 
-                // don't buffer so we can get the actual upload progress
-                //client.DefaultRequestHeaders.TransferEncodingChunked = true;                                    
-                client.DefaultRequestHeaders.ExpectContinue = true;
-
                 return await client.PostAsync(new Uri(UploadUri), request);                 
                 
             }     
         }
     }
 
+    /// <summary>
+    /// Information about a file which shall be uploaded
+    /// </summary>
     public class UploadFileInfo
     {
         public string Filename { get; set; }
         public Stream FileContent { get; set; }
+
+        public UploadFileInfo(string filename, Stream content)
+        {
+            Filename = filename;
+            FileContent = content;
+        }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using SeafClient.CommandParameters;
 using SeafClient.Exceptions;
 using SeafClient.Utils;
 using System;
