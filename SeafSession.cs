@@ -32,7 +32,7 @@ namespace SeafClient
         /// <param name="serverUrl">The server url to connect to (including protocol (http or https) and port)</param>
         /// <param name="username">The username to login with</param>
         /// <param name="pwd">The password for the given user</param>
-        public static async Task<SeafSession> Establish(string serverUri, string username, string pwd)
+        public static async Task<SeafSession> Establish(string serverUri, string username, byte[] pwd)
         {
             if (!serverUri.EndsWith("/"))
                 serverUri += "/";
@@ -131,6 +131,19 @@ namespace SeafClient
         }
 
         /// <summary>
+        /// Rename the given directory
+        /// </summary>
+        /// <param name="library"></param>
+        /// <param name="directoryPath"></param>
+        /// <param name="newName"></param>
+        /// <returns></returns>
+        public async Task<bool> RenameDirectory(SeafLibrary library, string directoryPath, string newName)
+        {
+            RenameDirectoryRequest req = new RenameDirectoryRequest(AuthToken, library.Id, directoryPath, newName);
+            return await SeafWebAPI.SendRequestAsync(ServerUri, req);
+        }
+
+        /// <summary>
         /// Delete the given directory in the given library
         /// </summary>
         /// <param name="library"></param>
@@ -139,6 +152,19 @@ namespace SeafClient
         public async Task<bool> DeleteDirectory(SeafLibrary library, string directory)
         {
             return await DeleteFile(library, directory);   
+        }
+
+        /// <summary>
+        /// Rename the given file
+        /// </summary>
+        /// <param name="library"></param>
+        /// <param name="directoryPath"></param>
+        /// <param name="newName"></param>
+        /// <returns></returns>
+        public async Task<bool> RenameFile(SeafLibrary library, string filePath, string newName)
+        {
+            RenameFileRequest req = new RenameFileRequest(AuthToken, library.Id, filePath, newName);
+            return await SeafWebAPI.SendRequestAsync(ServerUri, req);
         }
 
         /// <summary>

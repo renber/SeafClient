@@ -1,8 +1,11 @@
 ﻿using SeafClient.Types;
+using SeafClient.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace SeafClient.Requests
 {
@@ -11,8 +14,8 @@ namespace SeafClient.Requests
     /// </summary>
     class AuthRequest : SeafRequest<AuthResponse>
     {
-        public string Username { get; set; }
-        public string Password { get; set; }
+        public string Username { get; set; }        
+        public byte[] Password { get; set; }
 
         public override string CommandUri
         {
@@ -21,23 +24,45 @@ namespace SeafClient.Requests
 
         public override HttpAccessMethod HttpAccessMethod
         {
-            get { return HttpAccessMethod.Post; }
+            get { return HttpAccessMethod.Custom; }
         }
 
-        public AuthRequest(string username, string password)
+        public AuthRequest(string username, byte[] password)
         {
             Username = username;
             Password = password;
         }
 
-        public override IEnumerable<KeyValuePair<string, string>> GetPostParameters()
+        public override async Task<HttpResponseMessage> SendRequestCustomizedAsync(string serverUri)
         {
-            foreach (var p in base.GetPostParameters())
-                yield return p;
+            try
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    if (!serverUri.EndsWith("/"))
+                        serverUri += "/";
 
-            yield return new KeyValuePair<string, string>("username", Username);
-            yield return new KeyValuePair<string, string>("password", Password);
+                    Uri uri = new Uri(serverUri + CommandUri);
 
+                    client.DefaultRequestHeaders.Referrer = uri;
+
+                    foreach (var hi in GetAdditionalHeaders())
+                        client.DefaultRequestHeaders.Add(hi.Key, hi.Value);
+
+                    HttpContent content = new CredentialFormContent(Username, Password);
+                    return await client.PostAsync(uri, content);                                        
+                }
+            }             
+            finally
+            {
+                ClearPassword();
+            }
+        }
+
+        void ClearPassword()
+        {
+            for (int i = 0; i < Password.Length; i++)
+                Password[i] = 0;
         }
     }
 

@@ -77,6 +77,15 @@ namespace SeafClient.Utils
             State = UploadState.PendingResponse;
         }
 
+        public long ComputeLength()
+        {
+            long length;
+            if (TryComputeLength(out length))
+                return length;
+            else
+                return -1;
+        }
+
         protected override bool TryComputeLength(out long length)
         {
             length = content.Length;

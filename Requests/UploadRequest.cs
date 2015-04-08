@@ -23,7 +23,7 @@ namespace SeafClient.Requests
 
         public string TargetDirectory {get; set;}
 
-        List<UploadFileInfo> files = new List<UploadFileInfo>();        
+        List<UploadFileInfo> files = new List<UploadFileInfo>();               
 
         public List<UploadFileInfo> Files
         {
@@ -82,7 +82,7 @@ namespace SeafClient.Requests
         }
 
         public override async Task<HttpResponseMessage> SendRequestCustomizedAsync(string serverUri)
-        {
+        {            
             using (HttpClient client = new HttpClient())
             {
                 string boundary = "Upload---------" + Guid.NewGuid().ToString();
@@ -100,6 +100,7 @@ namespace SeafClient.Requests
                     });
                     fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");                    
                     fileContent.Headers.TryAddWithoutValidation("Content-Disposition", String.Format("form-data; name=\"file\"; filename=\"{0}\"", f.Filename));
+
                     request.Add(fileContent);
                 }                
 
@@ -108,20 +109,39 @@ namespace SeafClient.Requests
                 if (!tDir.StartsWith("/"))
                     tDir = "/" + tDir;
 
-                var dirContent = new StringContent(tDir, Encoding.GetEncoding("ASCII"));
+                var dirContent = new StringContent(tDir, Encoding.UTF8);
                 dirContent.Headers.ContentType = null;
-                dirContent.Headers.TryAddWithoutValidation("Content-Disposition", @"form-data; name=""parent_dir""");
-                request.Add(dirContent);  
+                dirContent.Headers.TryAddWithoutValidation("Content-Disposition", @"form-data; name=""parent_dir""");                
+                request.Add(dirContent);
+
+                long conLen = 0;                
                 
+#if WINDOWS_PHONE_7
+                var func = request.GetType().GetMethod("TryComputeLength", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+#else
+                var func = System.Reflection.RuntimeReflectionExtensions.GetRuntimeMethod(request.GetType(), "TryComputeLength", new Type[] { typeof(long) });
+#endif
+                object[] args = new object[] { 0L };
+                var r = func.Invoke(request, args);
+                if (r is bool && (bool)r)
+                  conLen = (long)args[0];
+
                 // the seafile-server implementation rejects the content-type if the boundary value is
                 // placed inside quotes which HttpClient does, so we have to redefine the content-type without using quotes
                 // remove the actual content-type which uses quotes
                 request.Headers.ContentType = null;
-                request.Headers.TryAddWithoutValidation("Content-Type", "multipart/form-data; boundary=" + boundary);                
+                request.Headers.TryAddWithoutValidation("Content-Type", "multipart/form-data; boundary=" + boundary);                                
+               
+                //client.DefaultRequestHeaders.TransferEncodingChunked = true;                
+                if (conLen > 0)
+                {
+                    // in order to disable buffering
+                    // and make the progress work
+                    request.Headers.Add("Content-Length", conLen.ToString());
+                }
 
-                return await client.PostAsync(new Uri(UploadUri), request);                 
-                
-            }     
+                return await client.PostAsync(new Uri(UploadUri), request);                                
+            }
         }
     }
 
