@@ -43,6 +43,14 @@ namespace SeafClient
             return new SeafSession(username, serverUri, response.Token);  
         } 
 
+        /// <summary>
+        /// Wraps an already existing seafile session
+        /// use SeafSession.Establish(...) to establish a new connection and retrieve an authentication token
+        /// from the Seafile server
+        /// </summary>
+        /// <param name="username">The username of the account authToken belongs to</param>
+        /// <param name="serverUri">The server url to connect to (including protocol (http or https) and port)</param>
+        /// <param name="authToken">The authentication token as received from the Seafile server</param>
         private SeafSession(string username, string serverUri, string authToken)
         {
             Username = username;
@@ -79,7 +87,7 @@ namespace SeafClient
         }
 
         /// <summary>
-        /// List all libraries of the current user (exlcudign shared libraries from other users)
+        /// List all libraries of the current user (excluding shared libraries from other users)
         /// </summary>
         /// <returns></returns>
         public async Task<List<SeafLibrary>> ListLibraries()
@@ -189,6 +197,19 @@ namespace SeafClient
         {
             GetFileDownloadLinkRequest req = new GetFileDownloadLinkRequest(AuthToken, library.Id, path);
             return await SeafWebAPI.SendRequestAsync(ServerUri, req);             
+        }
+
+        /// <summary>
+        /// Get a thumbnail for the given image
+        /// </summary>
+        /// <param name="library"></param>
+        /// <param name="path"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        public async Task<byte[]> GetThumbnailImage(SeafLibrary library, string path, int size)
+        {
+            GetThumbnailImageRequest req = new GetThumbnailImageRequest(AuthToken, library.Id, path, size);
+            return await SeafWebAPI.SendRequestAsync(ServerUri, req);
         }
 
         /// <summary>

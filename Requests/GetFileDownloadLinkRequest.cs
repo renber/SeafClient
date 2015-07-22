@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SeafClient.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -18,7 +19,7 @@ namespace SeafClient.Requests
 
         public override string CommandUri
         {
-            get { return String.Format("api2/repos/{0}/file/?p={1}", LibraryId, Path); }
+            get { return String.Format("api2/repos/{0}/file/?p={1}", LibraryId, WebUtility.UrlEncode(Path)); }
         }
 
         public override HttpAccessMethod HttpAccessMethod

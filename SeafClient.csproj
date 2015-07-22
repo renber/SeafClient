@@ -60,6 +60,7 @@
     <Compile Include="Requests\CreateDirectoryRequest.cs" />
     <Compile Include="Requests\DeleteDirEntryRequest.cs" />
     <Compile Include="Requests\GetFileDownloadLinkRequest.cs" />
+    <Compile Include="Requests\GetThumbnailImageRequest.cs" />
     <Compile Include="Requests\GetUploadLinkRequest.cs" />
     <Compile Include="Requests\ListDirectoryEntriesRequest.cs" />
     <Compile Include="Requests\ListLibrariesRequest.cs" />
@@ -76,6 +77,7 @@
     <Compile Include="SeafSession.cs" />
     <Compile Include="SeafWebAPI.cs" />
     <Compile Include="Utils\CredentialFormContent.cs" />
+    <Compile Include="Utils\SeafDateUtils.cs" />
     <Compile Include="Utils\HttpUtils.cs" />
     <Compile Include="Utils\ProgressableStreamContent.cs" />
   </ItemGroup>

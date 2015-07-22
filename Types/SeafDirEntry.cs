@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,9 +12,19 @@ namespace SeafClient.Types
     public class SeafDirEntry
     {
         public string ID { get; set; }
-        public DirEntryType Type { get; set; }
+
+        public String LibraryId { get; set; }
+
+        public DirEntryType Type { get; set; }        
 
         public string Name { get; set; }
+
+        /// <summary>
+        /// Time of the last modification of this entry
+        /// (as UNIX timestamp)
+        /// </summary>
+        [JsonProperty("mtime")]
+        public long Timestamp { get; set; }
 
         /// <summary>
         /// File size (only if Type is File)
