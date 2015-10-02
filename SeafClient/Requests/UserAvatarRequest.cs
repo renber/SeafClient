@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using SeafClient.Converters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,7 +47,7 @@ namespace SeafClient.Requests
         [JsonProperty("is_default")]
         public bool IsDefault { get; set; }
 
-        [JsonProperty("mtime")]
-        public int Timestamp { get; set; }
+        [JsonProperty("mtime"), JsonConverter(typeof(SeafTimestampConverter))]
+        public DateTime Timestamp { get; set; }
     }
 }

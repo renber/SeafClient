@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Net.Http;
 
 namespace SeafClient.Requests
 {
@@ -20,6 +21,17 @@ namespace SeafClient.Requests
         public override HttpAccessMethod HttpAccessMethod
         {
             get { return SeafClient.HttpAccessMethod.Get; }
+        }
+
+        public override string GetErrorDescription(HttpResponseMessage msg)
+        {
+            switch(msg.StatusCode)
+            {
+                case System.Net.HttpStatusCode.Forbidden:
+                    return "Invalid token";
+                default:
+                    return base.GetErrorDescription(msg);
+            }
         }
 
         public AccountInfoRequest(string authToken)

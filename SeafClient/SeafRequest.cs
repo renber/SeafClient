@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json;
+using SeafClient.Types;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -29,7 +31,7 @@ namespace SeafClient
         /// <returns></returns>
         public virtual IEnumerable<KeyValuePair<string, string>> GetAdditionalHeaders()
         {
-            // we expect a respons ein JSON format
+            // we expect a response in JSON format
             yield return new KeyValuePair<string, string>("Accept", "application/json; indent=4");
         }
 
@@ -47,17 +49,17 @@ namespace SeafClient
         /// Used to send the request when HttpAccessMethod is Custom
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<HttpResponseMessage> SendRequestCustomizedAsync(string serverUri)
-        {
+        public virtual HttpRequestMessage GetCustomizedRequest(string serverUri)
+        {            
             throw new NotImplementedException("SendRequestCustomized has not been implemented for this request.");
         }
-        
+
         /// <summary>
-        /// Returns if the command was successful
+        /// Returns if the command which was answered with the given response message was successful
         /// </summary>        
         public virtual bool WasSuccessful(HttpResponseMessage msg)
-        {            
-            return msg.StatusCode == System.Net.HttpStatusCode.OK;
+        {
+            return msg.IsSuccessStatusCode;            
         }
 
         /// <summary>
@@ -68,13 +70,12 @@ namespace SeafClient
         /// <returns></returns>
         public virtual string GetErrorDescription(HttpResponseMessage msg)
         {
-            switch ((int)msg.StatusCode)
+            if (Enum.IsDefined(typeof(SeafStatusCode), (int)msg.StatusCode))
             {
-                case 520: // not a standard HTTP status code, but used by seafile
-                    return "Operation failed.";
-                default:
-                    return "Unknown error.";
+                return ((SeafStatusCode)msg.StatusCode).ToString();
             }
+            else
+                return "Unknown error";
         }
 
         /// <summary>
@@ -82,10 +83,14 @@ namespace SeafClient
         /// </summary>        
         public virtual async Task<TResponse> ParseResponseAsync(HttpResponseMessage msg)
         {
-            string content = await msg.Content.ReadAsStringAsync();
-
             // try to read the response content as JSON object
-            return JsonConvert.DeserializeObject<TResponse>(content);
+            var stream = await msg.Content.ReadAsStreamAsync();
+            using (StreamReader sr = new StreamReader(stream))
+            using (JsonReader reader = new JsonTextReader(sr))            
+            {
+                JsonSerializer serializer = new JsonSerializer();
+                return serializer.Deserialize<TResponse>(reader);
+            }            
         }
     }
 

@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using SeafClient.Converters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,8 +24,8 @@ namespace SeafClient.Types
         /// Time of the last modification of this entry
         /// (as UNIX timestamp)
         /// </summary>
-        [JsonProperty("mtime")]
-        public long Timestamp { get; set; }
+        [JsonProperty("mtime"), JsonConverter(typeof(SeafTimestampConverter))]
+        public DateTime Timestamp { get; set; }
 
         /// <summary>
         /// File size (only if Type is File)

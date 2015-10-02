@@ -12,7 +12,7 @@ namespace SeafClient.Requests
     /// <summary>
     /// Seafile command to authenticate a user
     /// </summary>
-    class AuthRequest : SeafRequest<AuthResponse>
+    public class AuthRequest : SeafRequest<AuthResponse>
     {
         public string Username { get; set; }        
         public byte[] Password { get; set; }
@@ -33,26 +33,25 @@ namespace SeafClient.Requests
             Password = password;
         }
 
-        public override async Task<HttpResponseMessage> SendRequestCustomizedAsync(string serverUri)
+        public override HttpRequestMessage GetCustomizedRequest(string serverUri)
         {
             try
             {
-                using (HttpClient client = new HttpClient())
-                {
-                    if (!serverUri.EndsWith("/"))
-                        serverUri += "/";
+                //return await client.PostAsync(uri, content);
+                if (!serverUri.EndsWith("/"))
+                    serverUri += "/";
+                Uri uri = new Uri(serverUri + CommandUri);
 
-                    Uri uri = new Uri(serverUri + CommandUri);
+                HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Post, uri);
+                
+                message.Headers.Referrer = uri;
+                foreach (var hi in GetAdditionalHeaders())
+                    message.Headers.Add(hi.Key, hi.Value);
 
-                    client.DefaultRequestHeaders.Referrer = uri;
+                message.Content = new CredentialFormContent(Username, Password);
 
-                    foreach (var hi in GetAdditionalHeaders())
-                        client.DefaultRequestHeaders.Add(hi.Key, hi.Value);
-
-                    HttpContent content = new CredentialFormContent(Username, Password);
-                    return await client.PostAsync(uri, content);                                        
-                }
-            }             
+                return message;
+            }
             finally
             {
                 ClearPassword();

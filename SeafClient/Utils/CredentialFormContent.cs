@@ -22,7 +22,8 @@ namespace SeafClient.Utils
             : base(new KeyValuePair<string,string>[0])
         {
             Username = username;
-            Password = password;            
+            Password = new byte[password.Length];
+            Array.Copy(password, Password, password.Length);
         }
 
         protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context)

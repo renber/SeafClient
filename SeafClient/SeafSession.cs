@@ -26,21 +26,43 @@ namespace SeafClient
         public string ServerUri { get; private set; }
         public string AuthToken { get; private set; }
 
+        private ISeafWebConnection webConnection;
+
         /// <summary>
-        /// Tries to connect to the given seafile server
+        /// Tries to connect to the given seafile server using the default ISeafWebConnection implementation and returns an appropriate session object on success
         /// </summary>
         /// <param name="serverUrl">The server url to connect to (including protocol (http or https) and port)</param>
         /// <param name="username">The username to login with</param>
         /// <param name="pwd">The password for the given user</param>
         public static async Task<SeafSession> Establish(string serverUri, string username, byte[] pwd)
         {
+            return await Establish(new SeafHttpConnection(), serverUri, username, pwd);
+        }
+
+        /// <summary>
+        /// Tries to connect to the given seafile server using the given ISeafWebConnection implementation and returns an appropriate session object on success
+        /// </summary>
+        /// <param name="serverUrl">The server url to connect to (including protocol (http or https) and port)</param>
+        /// <param name="username">The username to login with</param>
+        /// <param name="pwd">The password for the given user</param>
+        public static async Task<SeafSession> Establish(ISeafWebConnection seafWebConnection, string serverUri, string username, byte[] pwd)
+        {
+            if (seafWebConnection == null)
+                throw new ArgumentNullException("seafWebConnection");
+            if (serverUri == null)
+                throw new ArgumentNullException("serverUri");
+            if (username == null)
+                throw new ArgumentNullException("username");
+            if (pwd == null)
+                throw new ArgumentNullException("pwd");
+
             if (!serverUri.EndsWith("/"))
                 serverUri += "/";
 
             // authenticate the user
             AuthRequest req = new AuthRequest(username, pwd);
-            var response = await SeafWebAPI.SendRequestAsync(serverUri, req);
-            return new SeafSession(username, serverUri, response.Token);  
+            var response = await seafWebConnection.SendRequestAsync(serverUri, req);
+            return new SeafSession(seafWebConnection, username, serverUri, response.Token);  
         } 
 
         /// <summary>
@@ -51,8 +73,9 @@ namespace SeafClient
         /// <param name="username">The username of the account authToken belongs to</param>
         /// <param name="serverUri">The server url to connect to (including protocol (http or https) and port)</param>
         /// <param name="authToken">The authentication token as received from the Seafile server</param>
-        private SeafSession(string username, string serverUri, string authToken)
+        private SeafSession(ISeafWebConnection seafWebConnection, string username, string serverUri, string authToken)
         {
+            webConnection = seafWebConnection;
             Username = username;
             ServerUri = serverUri;
             AuthToken = authToken;
@@ -66,7 +89,7 @@ namespace SeafClient
         {
             AccountInfoRequest req = new AccountInfoRequest(AuthToken);
 
-            return await SeafWebAPI.SendRequestAsync<AccountInfo>(ServerUri, req);
+            return await webConnection.SendRequestAsync<AccountInfo>(ServerUri, req);
         }
 
         /// <summary>
@@ -83,27 +106,27 @@ namespace SeafClient
         public async Task<UserAvatar> GetUserAvatar(string username, int size)
         {
             UserAvatarRequest req = new UserAvatarRequest(AuthToken, username, size);
-            return await SeafWebAPI.SendRequestAsync(ServerUri, req);
+            return await webConnection.SendRequestAsync(ServerUri, req);
         }
 
         /// <summary>
         /// List all libraries of the current user (excluding shared libraries from other users)
         /// </summary>
         /// <returns></returns>
-        public async Task<List<SeafLibrary>> ListLibraries()
+        public async Task<IList<SeafLibrary>> ListLibraries()
         {
             ListLibrariesRequest req = new ListLibrariesRequest(AuthToken);
-            return await SeafWebAPI.SendRequestAsync(ServerUri, req);            
+            return await webConnection.SendRequestAsync(ServerUri, req);            
         }
 
         /// <summary>
         /// Return all shared libraries of the current user
         /// </summary>
         /// <returns></returns>
-        public async Task<List<SeafLibrary>> ListSharedLibraries()
+        public async Task<IList<SeafSharedLibrary>> ListSharedLibraries()
         {
             ListSharedLibrariesRequest req = new ListSharedLibrariesRequest(AuthToken);
-            return await SeafWebAPI.SendRequestAsync(ServerUri, req);
+            return await webConnection.SendRequestAsync(ServerUri, req);
         }
 
         /// <summary>
@@ -118,9 +141,8 @@ namespace SeafClient
                 directory += "/";
 
             ListDirectoryEntriesRequest req = new ListDirectoryEntriesRequest(AuthToken, library.Id, directory);
-            var dLst = await SeafWebAPI.SendRequestAsync(ServerUri, req);
+            var dLst = await webConnection.SendRequestAsync(ServerUri, req);
             // set the path of the items              
-
             foreach (var d in dLst)
                 d.Path = directory + d.Name;
             return dLst;
@@ -135,7 +157,7 @@ namespace SeafClient
         public async Task<bool> CreateDirectory(SeafLibrary library, string directory)
         {
             CreateDirectoryRequest req = new CreateDirectoryRequest(AuthToken, library.Id, directory);
-            return await SeafWebAPI.SendRequestAsync(ServerUri, req); 
+            return await webConnection.SendRequestAsync(ServerUri, req); 
         }
 
         /// <summary>
@@ -148,7 +170,7 @@ namespace SeafClient
         public async Task<bool> RenameDirectory(SeafLibrary library, string directoryPath, string newName)
         {
             RenameDirectoryRequest req = new RenameDirectoryRequest(AuthToken, library.Id, directoryPath, newName);
-            return await SeafWebAPI.SendRequestAsync(ServerUri, req);
+            return await webConnection.SendRequestAsync(ServerUri, req);
         }
 
         /// <summary>
@@ -172,7 +194,7 @@ namespace SeafClient
         public async Task<bool> RenameFile(SeafLibrary library, string filePath, string newName)
         {
             RenameFileRequest req = new RenameFileRequest(AuthToken, library.Id, filePath, newName);
-            return await SeafWebAPI.SendRequestAsync(ServerUri, req);
+            return await webConnection.SendRequestAsync(ServerUri, req);
         }
 
         /// <summary>
@@ -184,7 +206,7 @@ namespace SeafClient
         public async Task<bool> DeleteFile(SeafLibrary library, string filePath)
         {
             DeleteDirEntryRequest req = new DeleteDirEntryRequest(AuthToken, library.Id, filePath);
-            return await SeafWebAPI.SendRequestAsync(ServerUri, req); 
+            return await webConnection.SendRequestAsync(ServerUri, req); 
         }
 
         /// <summary>
@@ -196,7 +218,7 @@ namespace SeafClient
         public async Task<string> GetFileDownloadLink(SeafLibrary library, string path)
         {
             GetFileDownloadLinkRequest req = new GetFileDownloadLinkRequest(AuthToken, library.Id, path);
-            return await SeafWebAPI.SendRequestAsync(ServerUri, req);             
+            return await webConnection.SendRequestAsync(ServerUri, req);             
         }
 
         /// <summary>
@@ -209,7 +231,7 @@ namespace SeafClient
         public async Task<byte[]> GetThumbnailImage(SeafLibrary library, string path, int size)
         {
             GetThumbnailImageRequest req = new GetThumbnailImageRequest(AuthToken, library.Id, path, size);
-            return await SeafWebAPI.SendRequestAsync(ServerUri, req);
+            return await webConnection.SendRequestAsync(ServerUri, req);
         }
 
         /// <summary>
@@ -223,10 +245,10 @@ namespace SeafClient
         {
             // to upload files we need to get a uplaod link first
             GetUploadLinkRequest req = new GetUploadLinkRequest(AuthToken, library.Id);
-            string uploadLink = await SeafWebAPI.SendRequestAsync(ServerUri, req);
+            string uploadLink = await webConnection.SendRequestAsync(ServerUri, req);
 
             UploadRequest upReq = new UploadRequest(AuthToken, uploadLink, targetDirectory, targetFilename, fileContent, progressCallback);
-            return await SeafWebAPI.SendRequestAsync(ServerUri, upReq);
+            return await webConnection.SendRequestAsync(ServerUri, upReq);
         }
         
     }

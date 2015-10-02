@@ -6,19 +6,22 @@ using System.Text;
 
 namespace SeafClient.Requests
 {
-    public class ListSharedLibrariesRequest : SessionRequest<List<SeafLibrary>>
+    /// <summary>
+    /// Request to list all libraries of the user owning the given authorization token
+    /// </summary>
+    public class ListLibrariesRequest : SessionRequest<IList<SeafLibrary>>
     {
         public override string CommandUri
         {
-            get { return "api2/shared-repos/"; }
+            get { return "api2/repos/"; }
         }
 
         public override HttpAccessMethod HttpAccessMethod
         {
-            get { return SeafClient.HttpAccessMethod.Get; }
+            get { return HttpAccessMethod.Get; }
         }
 
-        public ListSharedLibrariesRequest(string authToken)
+        public ListLibrariesRequest(string authToken)
             : base(authToken)
         {
             // --
