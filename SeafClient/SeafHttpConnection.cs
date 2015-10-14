@@ -18,12 +18,9 @@ namespace SeafClient
         /// <param name="serverUri"></param>
         /// <param name="request"></param>
         /// <returns></returns>
-        public HttpRequestMessage CreateHttpRequestMessage<T>(string serverUri, SeafRequest<T> request)
-        {
-            if (!serverUri.EndsWith("/"))
-                serverUri += "/";
-
-            string targetUri = serverUri + request.CommandUri;            
+        public HttpRequestMessage CreateHttpRequestMessage<T>(Uri serverUri, SeafRequest<T> request)
+        {            
+            Uri targetUri = new Uri(serverUri, request.CommandUri);            
 
             switch (request.HttpAccessMethod)
             {
@@ -47,7 +44,7 @@ namespace SeafClient
         /// <param name="serverUri"></param>
         /// <param name="request"></param>
         /// <returns></returns>
-        public async Task<T> SendRequestAsync<T>(string serverUri, SeafRequest<T> request)
+        public async Task<T> SendRequestAsync<T>(Uri serverUri, SeafRequest<T> request)
         {            
             HttpRequestMessage requestMessage = CreateHttpRequestMessage(serverUri, request);
 
@@ -58,7 +55,7 @@ namespace SeafClient
             if (request.WasSuccessful(response))
                 return await request.ParseResponseAsync(response);
             else
-                throw new SeafException(response.StatusCode, request.GetErrorDescription(response));
+                throw new SeafException(request.GetSeafError(response));
         }
     }
 }

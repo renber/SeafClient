@@ -8,6 +8,7 @@ using System.Text;
 using SeafClient.Types;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 
 namespace SeafClient.Tests
 {
@@ -20,7 +21,10 @@ namespace SeafClient.Tests
         [TestMethod]
         public void Test_Authentication_HttpRequest()
         {
-            AuthRequest req = new AuthRequest("TestUser@test.com", Encoding.UTF8.GetBytes("mypw"));
+            // in actual production code you should SecureString to retrieve the char array from a password
+            // do not store passwords in a standard string
+            char[] pwdArray = "mypw".ToCharArray();
+            AuthRequest req = new AuthRequest("TestUser@test.com", pwdArray);
 
             // check the created http request message
             var httpReq = TestConnection.CreateHttpRequestMessage(DummyServerUri, req);
@@ -29,12 +33,17 @@ namespace SeafClient.Tests
             Assert.AreEqual(DummyServerUri + "api2/auth-token/", httpReq.RequestUri.ToString());
             string postContent = ExecuteSync(() => httpReq.Content.ReadAsStringAsync());
             Assert.AreEqual("username=TestUser@test.com&password=mypw", postContent);
+
+            // ensure that the password array has been cleared
+            char[] nullArray = new char[4];
+            Array.Clear(nullArray, 0, 4);
+            Assert.IsTrue(nullArray.SequenceEqual(pwdArray));
         }
 
         [TestMethod]
         public void Test_Authentication_Success()
         {
-            AuthRequest req = new AuthRequest("", new byte[0]);
+            AuthRequest req = new AuthRequest("", new char[0]);
 
             // test sample response message            
             HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.OK);
@@ -44,6 +53,18 @@ namespace SeafClient.Tests
             AuthResponse result = ExecuteSync(() => req.ParseResponseAsync(m));
             Assert.IsNotNull(result);
             Assert.AreEqual(FakeToken, result.Token);
+        }
+
+        [TestMethod]
+        public void Test_Authentication_Error()
+        {
+            AuthRequest req = new AuthRequest("", new char[0]);
+
+            // test sample response message            
+            HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.BadRequest);            
+
+            Assert.IsFalse(req.WasSuccessful(m));            
+            Assert.AreEqual(SeafErrorCode.InvalidCredentials, req.GetSeafError(m).SeafErrorCode);
         }
 
         [TestMethod]
@@ -82,7 +103,7 @@ namespace SeafClient.Tests
             HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.Forbidden);
 
             Assert.IsFalse(req.WasSuccessful(m));
-            Assert.AreEqual("Invalid token", req.GetErrorDescription(m));
+            Assert.AreEqual(SeafErrorCode.InvalidToken, req.GetSeafError(m).SeafErrorCode);
         }
 
         [TestMethod]

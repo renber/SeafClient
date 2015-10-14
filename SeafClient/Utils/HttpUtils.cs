@@ -20,10 +20,10 @@ namespace SeafClient.Utils
         /// <param name="headerInfo">Additional headers to be added to the HTTP GET request</param>
         /// <param name="getParams">Parameters (will be added to the URI with ?key1=value1&key2=value2 etc.</param>
         /// <returns>The http response</returns>
-        public static HttpRequestMessage CreateSimpleRequest(HttpMethod method, string uri, IEnumerable<KeyValuePair<string, string>> headerInfo)
+        public static HttpRequestMessage CreateSimpleRequest(HttpMethod method, Uri uri, IEnumerable<KeyValuePair<string, string>> headerInfo)
         {
             HttpRequestMessage message = new HttpRequestMessage(method, uri);
-            message.Headers.Referrer = new Uri(uri);
+            message.Headers.Referrer = uri;
 
             foreach (var hi in headerInfo)
                  message.Headers.Add(hi.Key, hi.Value);
@@ -38,10 +38,10 @@ namespace SeafClient.Utils
         /// <param name="headerInfo">Additional headers to be added to the HTTP POST request</param>
         /// <param name="getParams">Post parameters</param>
         /// <returns>The http response</returns>        
-        public static HttpRequestMessage CreatePostRequest(string uri, IEnumerable<KeyValuePair<string, string>> headerInfo, IEnumerable<KeyValuePair<string, string>> postParams)
+        public static HttpRequestMessage CreatePostRequest(Uri uri, IEnumerable<KeyValuePair<string, string>> headerInfo, IEnumerable<KeyValuePair<string, string>> postParams)
         {
             HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Post, uri);
-            message.Headers.Referrer = new Uri(uri);
+            message.Headers.Referrer = uri;
 
             foreach (var hi in headerInfo)
                 message.Headers.Add(hi.Key, hi.Value);

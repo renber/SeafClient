@@ -3,6 +3,7 @@ using SeafClient.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,11 +12,13 @@ namespace SeafClient.Requests
 {
     /// <summary>
     /// Seafile command to authenticate a user
+    /// After the request is built, the password array is zeroed out and the 
+    /// AuthRequest cannot be used again
     /// </summary>
     public class AuthRequest : SeafRequest<AuthResponse>
     {
-        public string Username { get; set; }        
-        public byte[] Password { get; set; }
+        protected string Username { get; set; }
+        protected char[] Password { get; set;  }
 
         public override string CommandUri
         {
@@ -27,20 +30,17 @@ namespace SeafClient.Requests
             get { return HttpAccessMethod.Custom; }
         }
 
-        public AuthRequest(string username, byte[] password)
+        public AuthRequest(string username, char[] password)
         {
             Username = username;
             Password = password;
         }
 
-        public override HttpRequestMessage GetCustomizedRequest(string serverUri)
+        public override HttpRequestMessage GetCustomizedRequest(Uri serverUri)
         {
             try
-            {
-                //return await client.PostAsync(uri, content);
-                if (!serverUri.EndsWith("/"))
-                    serverUri += "/";
-                Uri uri = new Uri(serverUri + CommandUri);
+            {                                
+                Uri uri = new Uri(serverUri, CommandUri);
 
                 HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Post, uri);
                 
@@ -58,10 +58,17 @@ namespace SeafClient.Requests
             }
         }
 
+        public override SeafError GetSeafError(HttpResponseMessage msg)
+        {
+            if (msg.StatusCode == HttpStatusCode.BadRequest)
+                return new SeafError(msg.StatusCode, SeafErrorCode.InvalidCredentials);            
+            else
+                return base.GetSeafError(msg);
+        }
+
         void ClearPassword()
         {
-            for (int i = 0; i < Password.Length; i++)
-                Password[i] = 0;
+            Array.Clear(Password, 0, Password.Length);
         }
     }
 

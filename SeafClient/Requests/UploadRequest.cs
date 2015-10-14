@@ -81,7 +81,7 @@ namespace SeafClient.Requests
             return !String.IsNullOrEmpty(content);
         }
 
-        public override HttpRequestMessage GetCustomizedRequest(string serverUri)
+        public override HttpRequestMessage GetCustomizedRequest(Uri serverUri)
         {
             string boundary = "Upload---------" + Guid.NewGuid().ToString();
 

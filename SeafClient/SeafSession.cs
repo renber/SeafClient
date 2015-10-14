@@ -23,7 +23,7 @@ namespace SeafClient
         /// </summary>
         public string Username { get; private set; }
 
-        public string ServerUri { get; private set; }
+        public Uri ServerUri { get; private set; }
         public string AuthToken { get; private set; }
 
         private ISeafWebConnection webConnection;
@@ -34,7 +34,7 @@ namespace SeafClient
         /// <param name="serverUrl">The server url to connect to (including protocol (http or https) and port)</param>
         /// <param name="username">The username to login with</param>
         /// <param name="pwd">The password for the given user</param>
-        public static async Task<SeafSession> Establish(string serverUri, string username, byte[] pwd)
+        public static async Task<SeafSession> Establish(Uri serverUri, string username, char[] pwd)
         {
             return await Establish(new SeafHttpConnection(), serverUri, username, pwd);
         }
@@ -45,7 +45,7 @@ namespace SeafClient
         /// <param name="serverUrl">The server url to connect to (including protocol (http or https) and port)</param>
         /// <param name="username">The username to login with</param>
         /// <param name="pwd">The password for the given user</param>
-        public static async Task<SeafSession> Establish(ISeafWebConnection seafWebConnection, string serverUri, string username, byte[] pwd)
+        public static async Task<SeafSession> Establish(ISeafWebConnection seafWebConnection, Uri serverUri, string username, char[] pwd)
         {
             if (seafWebConnection == null)
                 throw new ArgumentNullException("seafWebConnection");
@@ -54,10 +54,7 @@ namespace SeafClient
             if (username == null)
                 throw new ArgumentNullException("username");
             if (pwd == null)
-                throw new ArgumentNullException("pwd");
-
-            if (!serverUri.EndsWith("/"))
-                serverUri += "/";
+                throw new ArgumentNullException("pwd");            
 
             // authenticate the user
             AuthRequest req = new AuthRequest(username, pwd);
@@ -73,7 +70,7 @@ namespace SeafClient
         /// <param name="username">The username of the account authToken belongs to</param>
         /// <param name="serverUri">The server url to connect to (including protocol (http or https) and port)</param>
         /// <param name="authToken">The authentication token as received from the Seafile server</param>
-        private SeafSession(ISeafWebConnection seafWebConnection, string username, string serverUri, string authToken)
+        private SeafSession(ISeafWebConnection seafWebConnection, string username, Uri serverUri, string authToken)
         {
             webConnection = seafWebConnection;
             Username = username;
@@ -135,16 +132,13 @@ namespace SeafClient
         /// <param name="library"></param>
         /// <param name="directory"></param>
         /// <returns></returns>
-        public async Task<List<SeafDirEntry>> ListDirectory(SeafLibrary library, string directory)
+        public async Task<IList<SeafDirEntry>> ListDirectory(SeafLibrary library, string directory)
         {
             if (!directory.EndsWith("/"))
                 directory += "/";
 
             ListDirectoryEntriesRequest req = new ListDirectoryEntriesRequest(AuthToken, library.Id, directory);
-            var dLst = await webConnection.SendRequestAsync(ServerUri, req);
-            // set the path of the items              
-            foreach (var d in dLst)
-                d.Path = directory + d.Name;
+            var dLst = await webConnection.SendRequestAsync(ServerUri, req);            
             return dLst;
         }
 

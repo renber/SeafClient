@@ -18,6 +18,6 @@ namespace SeafClient
         /// <typeparam name="T"></typeparam>
         /// <param name="serverUri">uri of the seafile server</param>
         /// <param name="request">The request to send</param>        
-        Task<T> SendRequestAsync<T>(string serverUri, SeafRequest<T> request);
+        Task<T> SendRequestAsync<T>(Uri serverUri, SeafRequest<T> request);
     }
 }

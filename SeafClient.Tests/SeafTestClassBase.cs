@@ -12,7 +12,7 @@ namespace SeafClient.Tests
     /// </summary>
     public class SeafTestClassBase
     {
-        public string DummyServerUri { get; }
+        public Uri DummyServerUri { get; }
         public string FakeToken { get; }
         public string FakeRepoId { get; }
 
@@ -33,7 +33,7 @@ namespace SeafClient.Tests
 
         public SeafTestClassBase()
         {
-            DummyServerUri = "https://www.test.test:4444/";
+            DummyServerUri = new Uri("https://www.test.test:4444/", UriKind.Absolute);
             FakeToken = "24fd3c026886e3121b2ca630805ed425c272cb96";
             FakeRepoId = "632ab8a8-ecf9-4435-93bf-f495d5bfe975";
             TestConnection = new SeafHttpConnection();

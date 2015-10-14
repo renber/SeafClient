@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Net.Http;
+using SeafClient.Types;
 
 namespace SeafClient.Requests
 {
@@ -23,14 +24,14 @@ namespace SeafClient.Requests
             get { return SeafClient.HttpAccessMethod.Get; }
         }
 
-        public override string GetErrorDescription(HttpResponseMessage msg)
+        public override SeafError GetSeafError(HttpResponseMessage msg)
         {
             switch(msg.StatusCode)
             {
                 case System.Net.HttpStatusCode.Forbidden:
-                    return "Invalid token";
+                    return new SeafError(msg.StatusCode, SeafErrorCode.InvalidToken);                    
                 default:
-                    return base.GetErrorDescription(msg);
+                    return base.GetSeafError(msg);
             }
         }
 

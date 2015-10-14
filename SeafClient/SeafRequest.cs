@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -49,7 +50,7 @@ namespace SeafClient
         /// Used to send the request when HttpAccessMethod is Custom
         /// </summary>
         /// <returns></returns>
-        public virtual HttpRequestMessage GetCustomizedRequest(string serverUri)
+        public virtual HttpRequestMessage GetCustomizedRequest(Uri serverUri)
         {            
             throw new NotImplementedException("SendRequestCustomized has not been implemented for this request.");
         }
@@ -68,14 +69,9 @@ namespace SeafClient
         /// </summary>
         /// <param name="msg"></param>
         /// <returns></returns>
-        public virtual string GetErrorDescription(HttpResponseMessage msg)
+        public virtual SeafError GetSeafError(HttpResponseMessage msg)
         {
-            if (Enum.IsDefined(typeof(SeafStatusCode), (int)msg.StatusCode))
-            {
-                return ((SeafStatusCode)msg.StatusCode).ToString();
-            }
-            else
-                return "Unknown error";
+            return new SeafError(msg.StatusCode, SeafErrorCode.NoDetails);            
         }
 
         /// <summary>
@@ -97,11 +93,20 @@ namespace SeafClient
     public enum HttpAccessMethod
     {
         /// <summary>
-        /// The request is sent using custom logic
+        /// The request is with a custom HttpRequestMessage
         /// </summary>
         Custom,
+        /// <summary>
+        /// The request has to be sent with an HTTP GET request
+        /// </summary>
         Get,
+        /// <summary>
+        /// The request has to be sent with an HTTP POST request
+        /// </summary>
         Post,
+        /// <summary>
+        /// The request has to be sent with an HTTP DELETE request
+        /// </summary>
         Delete
     }
 }

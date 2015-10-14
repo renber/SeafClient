@@ -12,8 +12,9 @@ namespace SeafClient.Types
     /// </summary>
     public class SeafDirEntry
     {
-        public string ID { get; set; }
+        public string Id { get; set; }
 
+        [JsonIgnore]
         public String LibraryId { get; set; }
 
         public DirEntryType Type { get; set; }        
@@ -35,6 +36,7 @@ namespace SeafClient.Types
         /// <summary>
         /// The path of this item in its library
         /// </summary>
+        [JsonIgnore]
         public string Path { get; set; }
     }
 

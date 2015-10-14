@@ -4,13 +4,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Net.Http;
 
 namespace SeafClient.Requests
 {
     /// <summary>
     /// Request to receive the contents of a directory
     /// </summary>
-    public class ListDirectoryEntriesRequest : SessionRequest<List<SeafDirEntry>>
+    public class ListDirectoryEntriesRequest : SessionRequest<IList<SeafDirEntry>>
     {
         public string LibraryId { get; private set; }
 
@@ -97,12 +98,31 @@ namespace SeafClient.Requests
             Recursive = recursive;
         }
 
-        public override async System.Threading.Tasks.Task<List<SeafDirEntry>> ParseResponseAsync(System.Net.Http.HttpResponseMessage msg)
+        public override async System.Threading.Tasks.Task<IList<SeafDirEntry>> ParseResponseAsync(System.Net.Http.HttpResponseMessage msg)
         {
             var entries = await base.ParseResponseAsync(msg);
+
+            // set the library id &  path of the items              
             foreach (var entry in entries)
+            {
                 entry.LibraryId = LibraryId;
+                entry.Path = Path + entry.Name;
+            }
+
             return entries;
+        }
+
+        public override SeafError GetSeafError(HttpResponseMessage msg)
+        {
+            switch (msg.StatusCode)
+            {
+                case HttpStatusCode.NotFound:
+                    return new SeafError(msg.StatusCode, SeafErrorCode.PathDoesNotExist);                    
+                case HttpStatusCode.RequestTimeout:
+                    return new SeafError(msg.StatusCode, SeafErrorCode.EncryptedRepo_PasswordNotProvided);                    
+                default:
+                    return base.GetSeafError(msg);
+            }
         }
     }
 

@@ -1,6 +1,8 @@
-﻿using System;
+﻿using SeafClient.Types;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 
 namespace SeafClient.Requests
@@ -46,13 +48,13 @@ namespace SeafClient.Requests
             return content == "\"success\"";
         }
 
-        public override string GetErrorDescription(System.Net.Http.HttpResponseMessage msg)
+        public override SeafError GetSeafError(System.Net.Http.HttpResponseMessage msg)
         {
-            if ((int)msg.StatusCode == 403)
+            if (msg.StatusCode == HttpStatusCode.Forbidden)
             {
-                return "You do not have permission to rename this folder.";
+                return new SeafError(msg.StatusCode, SeafErrorCode.NotEnoughPermissions);                
             } else
-                return base.GetErrorDescription(msg);
+                return base.GetSeafError(msg);
         }
     }
 }

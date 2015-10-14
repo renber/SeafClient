@@ -1,4 +1,5 @@
-﻿using SeafClient.Utils;
+﻿using SeafClient.Types;
+using SeafClient.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,16 +38,16 @@ namespace SeafClient.Requests
                 Path = "/" + Path;
         }
 
-        public override string GetErrorDescription(HttpResponseMessage msg)
+        public override SeafError GetSeafError(HttpResponseMessage msg)
         {
             switch (msg.StatusCode)
             {
                 case HttpStatusCode.NotFound:
-                    return "File not found";
+                    return new SeafError(msg.StatusCode, SeafErrorCode.FileNotFound);                    
                 case HttpStatusCode.BadRequest:
-                    return "Path is missing or invalid";
+                    return new SeafError(msg.StatusCode, SeafErrorCode.PathDoesNotExist);                    
                 default:
-                    return base.GetErrorDescription(msg);
+                    return base.GetSeafError(msg);
             }
         }
 

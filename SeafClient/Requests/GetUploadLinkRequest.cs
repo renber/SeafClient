@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SeafClient.Types;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -28,14 +29,14 @@ namespace SeafClient.Requests
             LibraryId = libraryId;
         }
 
-        public override string GetErrorDescription(System.Net.Http.HttpResponseMessage msg)
+        public override SeafError GetSeafError(System.Net.Http.HttpResponseMessage msg)
         {
-            switch ((int)msg.StatusCode)
+            switch (msg.StatusCode)
             {
-                case 500:
-                    return "Run out of quota";
+                case System.Net.HttpStatusCode.InternalServerError:
+                    return new SeafError(msg.StatusCode, SeafErrorCode.OutOfQuota);                    
                 default:
-                    return base.GetErrorDescription(msg);
+                    return base.GetSeafError(msg);
             }            
         }
 

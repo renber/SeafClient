@@ -54,6 +54,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Converters\SeafPermissionConverter.cs" />
     <Compile Include="Converters\SeafTimestampConverter.cs" />
     <Compile Include="ISeafWebConnection.cs" />
     <Compile Include="Requests\AccountInfoRequest.cs" />
@@ -78,7 +79,9 @@
     <Compile Include="SeafRequest.cs" />
     <Compile Include="SeafSession.cs" />
     <Compile Include="SeafHttpConnection.cs" />
-    <Compile Include="Types\SeafStatusCode.cs" />
+    <Compile Include="Types\SeafPermission.cs" />
+    <Compile Include="Types\SeafSharedLibrary.cs" />
+    <Compile Include="Types\SeafErrorCode.cs" />
     <Compile Include="Utils\CredentialFormContent.cs" />
     <Compile Include="Utils\SeafDateUtils.cs" />
     <Compile Include="Utils\HttpUtils.cs" />

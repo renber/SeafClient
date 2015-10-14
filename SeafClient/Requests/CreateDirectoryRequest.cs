@@ -53,14 +53,14 @@ namespace SeafClient.Requests
             return content == "\"success\"";
         }
 
-        public override string GetErrorDescription(HttpResponseMessage msg)
+        public override SeafError GetSeafError(HttpResponseMessage msg)
         {
             switch (msg.StatusCode)
             {
                 case HttpStatusCode.BadRequest:
-                    return "Path is missing or invalid";                
+                    return new SeafError(msg.StatusCode, SeafErrorCode.PathDoesNotExist);                    
                 default:
-                    return base.GetErrorDescription(msg);
+                    return base.GetSeafError(msg);
             }            
         }
     }

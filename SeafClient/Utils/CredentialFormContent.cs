@@ -15,14 +15,14 @@ namespace SeafClient.Utils
     /// </summary>
     class CredentialFormContent : FormUrlEncodedContent
     {
-        public  string Username {get; set;}
-        public byte[] Password { get; set; }
+        private  string Username {get; set; }
+        private char[] Password { get; set; }
 
-        public CredentialFormContent(string username, byte[] password)
+        public CredentialFormContent(string username, char[] password)
             : base(new KeyValuePair<string,string>[0])
         {
             Username = username;
-            Password = new byte[password.Length];
+            Password = new char[password.Length];
             Array.Copy(password, Password, password.Length);
         }
 
@@ -36,7 +36,8 @@ namespace SeafClient.Utils
                 buf = Encoding.UTF8.GetBytes("&password=");
                 await stream.WriteAsync(buf, 0, buf.Length);
 
-                await stream.WriteAsync(Password, 0, Password.Length);
+                // transfer passwor din UTF-8
+                await stream.WriteAsync(Encoding.UTF8.GetBytes(Password), 0, Password.Length);
             }
             finally
             {
@@ -46,8 +47,7 @@ namespace SeafClient.Utils
 
         void ClearPassword()
         {
-            for (int i = 0; i < Password.Length; i++)
-                Password[i] = 0;
+            Array.Clear(Password, 0, Password.Length);
         }
 
         protected override bool TryComputeLength(out long length)

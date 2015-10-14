@@ -1,8 +1,12 @@
-﻿using System;
+﻿using SeafClient.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using SeafClient.Types;
+using System.Net.Http;
 
 namespace SeafClient.Requests
 {
@@ -17,7 +21,7 @@ namespace SeafClient.Requests
 
         public override string CommandUri
         {
-            get { return String.Format("api2/repos/{0}/dir/?p={1}", LibraryId, Path); }
+            get { return String.Format("api2/repos/{0}/dir/?p={1}", LibraryId, WebUtility.UrlEncode(Path)); }
         }
 
         public override HttpAccessMethod HttpAccessMethod
@@ -39,6 +43,15 @@ namespace SeafClient.Requests
         {
             string content = await msg.Content.ReadAsStringAsync();
             return content == "\"success\"";
+        }
+
+        public override SeafError GetSeafError(HttpResponseMessage msg)
+        {
+            if (msg.StatusCode == HttpStatusCode.BadRequest)
+                return new SeafError(msg.StatusCode, SeafErrorCode.PathDoesNotExist);
+
+            else
+                return base.GetSeafError(msg);
         }
     }
 }

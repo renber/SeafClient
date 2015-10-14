@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SeafClient", "SeafClient\Se
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SeafClient.Tests", "SeafClient.Tests\SeafClient.Tests.csproj", "{6EA26510-9FD1-4F63-9639-E8F32413AEF5}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{4F20BAA1-F76E-47AE-A3D6-2A1A9614738C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SeafConsole", "Samples\SeafConsole\SeafConsole.csproj", "{AE20190A-E6D9-4F2A-982E-F5BF1CA77CD2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,8 +25,15 @@ Global
 		{6EA26510-9FD1-4F63-9639-E8F32413AEF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6EA26510-9FD1-4F63-9639-E8F32413AEF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6EA26510-9FD1-4F63-9639-E8F32413AEF5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE20190A-E6D9-4F2A-982E-F5BF1CA77CD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE20190A-E6D9-4F2A-982E-F5BF1CA77CD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE20190A-E6D9-4F2A-982E-F5BF1CA77CD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE20190A-E6D9-4F2A-982E-F5BF1CA77CD2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{AE20190A-E6D9-4F2A-982E-F5BF1CA77CD2} = {4F20BAA1-F76E-47AE-A3D6-2A1A9614738C}
 	EndGlobalSection
 EndGlobal
