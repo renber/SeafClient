@@ -5,6 +5,8 @@ It can be used in desktop apps, Windows Store applications as well as in apps fo
 
 The aim is to create a library to easily access a Seafile server and the files stored there through a .Net application in a strong-typed fashion (no custom JSON parsing and with meaningful error messages, etc. The library uses the async/await methods.
 
+The SeafClient library is available on NuGet [here](https://www.nuget.org/packages/SeafClient/).
+
 ## Usage example (C#)
 
 ```C#
