@@ -57,3 +57,19 @@ async Task Demo()
     }
 }
 ```
+
+## Currently implemented requests
+See the [official Seafile Web APi documentation](http://manual.seafile.com/develop/web_api.html) for a list of all available requests. The following requests are currently implemented:
+
+* Authentication
+* Check Account Info
+* Get User Avatar
+* List Libraries / List Shared Libraries
+* List Directory Entries
+* Create Directory
+* Delete Directory / File
+* Rename Directory / File
+* Get Thumbnail Image
+* Get Download Link
+* Get Upload Link / Upload file
+* 
