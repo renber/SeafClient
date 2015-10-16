@@ -144,5 +144,61 @@ namespace SeafClient.Tests
 
             Assert.IsFalse(req.WasSuccessful(m));            
         }
+
+        [TestMethod]
+        public void Test_SessionFromToken()
+        {
+            // From Token automatically checks the token using the CheckAccountInfo() command
+            HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.OK);
+            m.Content = new StringContent("{\"usage\": 26038531,\"total\": 104857600,\"email\": \"user@example.com\"}");
+            var mockedConnection = new MockedSeafConnection();
+            mockedConnection.FakeResponseFor<AccountInfoRequest>(m);
+            var session = ExecuteSync(() => SeafSession.FromToken(mockedConnection, new Uri("http://www.example.com"), FakeToken));            
+
+            Assert.IsNotNull(session);
+            Assert.AreEqual(FakeToken, session.AuthToken);
+            Assert.AreEqual("user@example.com", session.Username);
+        }
+
+        [TestMethod]
+        public void Test_SessionFromUsernameAndToken()
+        {                        
+            var session = SeafSession.FromToken(new Uri("http://www.example.com"), "user@example.com", FakeToken);
+
+            Assert.IsNotNull(session);
+            Assert.AreEqual(FakeToken, session.AuthToken);
+            Assert.AreEqual("user@example.com", session.Username);
+        }
+
+        [TestMethod]
+        public void Test_Sessionless_Ping()
+        {
+            var c = new MockedSeafConnection();
+            HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.OK);
+            m.Content = new StringContent("\"pong\"");
+            c.FakeResponseFor<PingRequest>(m);
+
+            var b = ExecuteSync( () => SeafSession.Ping(c, new Uri("http://www.example.com")));
+
+            Assert.IsTrue(b);            
+        }
+
+        [TestMethod]
+        public void Test_GetServerInfo()
+        {
+            var c = new MockedSeafConnection();
+            HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.OK);
+            m.Content = new StringContent(@"{
+                                            ""version"": ""4.0.6"",
+                                            ""features"": [
+                                            ""seafile-basic"",
+                                            ]}");
+            c.FakeResponseFor<GetServerInfoRequest>(m);
+
+            var sInfo = ExecuteSync(() => SeafSession.GetServerInfo(c, new Uri("http://www.example.com")));
+
+            Assert.AreEqual("4.0.6", sInfo.Version);
+            Assert.IsTrue(sInfo.Features.Contains("seafile-basic"));
+        }
     }
 }

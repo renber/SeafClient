@@ -52,10 +52,12 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\SeafClient.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Converters\SeafPermissionConverter.cs" />
     <Compile Include="Converters\SeafTimestampConverter.cs" />
+    <Compile Include="ISeafRequest.cs" />
     <Compile Include="ISeafWebConnection.cs" />
     <Compile Include="Requests\AccountInfoRequest.cs" />
     <Compile Include="Requests\AuthRequest.cs" />
@@ -68,6 +70,7 @@
     <Compile Include="Requests\ListDirectoryEntriesRequest.cs" />
     <Compile Include="Requests\ListLibrariesRequest.cs" />
     <Compile Include="Requests\ListSharedLibrariesRequest.cs" />
+    <Compile Include="Requests\PingRequest.cs" />
     <Compile Include="Requests\RenameDirectoryRequest.cs" />
     <Compile Include="Requests\RenameFileRequest.cs" />
     <Compile Include="Requests\SessionRequest.cs" />

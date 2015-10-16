@@ -5,7 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 
-namespace SeafClient.Exceptions
+namespace SeafClient
 {
     /// <summary>
     /// An exception in the seafile web api implementation

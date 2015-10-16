@@ -1,5 +1,4 @@
 ﻿using SeafClient;
-using SeafClient.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -74,6 +73,13 @@ namespace SeafConsole
                 SeafSession session = await SeafSession.Establish(host, user, pw);
                 Console.WriteLine("OK");
                 Console.WriteLine();
+
+                // ping the server
+                Console.Write("Pinging the server...");
+                if (await session.Ping())
+                    Console.WriteLine("OK");
+                else
+                    Console.WriteLine("Failed");
 
                 // retrieve user account info
                 var info = await session.CheckAccountInfo();

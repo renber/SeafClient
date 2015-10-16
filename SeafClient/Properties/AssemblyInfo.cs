@@ -9,14 +9,12 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("SeafClient")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("René Bergelt")]
 [assembly: AssemblyProduct("SeafClient")]
-[assembly: AssemblyCopyright("Copyright ©  2015")]
+[assembly: AssemblyCopyright("Copyright © 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: NeutralResourcesLanguage("de")]
-
-[assembly: InternalsVisibleTo("SeafClient.Tests")]
 
 // Versionsinformationen für eine Assembly bestehen aus den folgenden vier Werten:
 //

@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using SeafClient.Requests;
-using SeafClient.Exceptions;
 using SeafClient.Types;
 using System;
 using System.Collections.Generic;
@@ -36,7 +35,7 @@ namespace SeafClient
         /// <param name="pwd">The password for the given user</param>
         public static async Task<SeafSession> Establish(Uri serverUri, string username, char[] pwd)
         {
-            return await Establish(new SeafHttpConnection(), serverUri, username, pwd);
+            return await Establish(SeafConnectionFactory.GetDefaultConnection(), serverUri, username, pwd);
         }
 
         /// <summary>
@@ -60,7 +59,66 @@ namespace SeafClient
             AuthRequest req = new AuthRequest(username, pwd);
             var response = await seafWebConnection.SendRequestAsync(serverUri, req);
             return new SeafSession(seafWebConnection, username, serverUri, response.Token);  
-        } 
+        }
+
+        /// <summary>
+        /// Create a seafile session for the given authentication token
+        /// Will automatically connect to the seafile server and check if the token is valid
+        /// and retrieve the username for the given token
+        /// </summary>
+        public static async Task<SeafSession> FromToken(Uri serverUri, string authToken)
+        {
+            return await FromToken(SeafConnectionFactory.GetDefaultConnection(), serverUri, authToken);
+        }
+
+        /// <summary>
+        /// Create a seafile session for the given authentication token
+        /// Will automatically connect to the seafile server and check if the token is valid
+        /// and retrieve the username for the given token using the given ISeafWebConnection
+        /// </summary>
+        public static async Task<SeafSession> FromToken(ISeafWebConnection seafWebConnection, Uri serverUri, string authToken)
+        {
+            if (seafWebConnection == null)
+                throw new ArgumentNullException("seafWebConnection");
+            if (serverUri == null)
+                throw new ArgumentNullException("serverUri");
+            if (authToken == null)
+                throw new ArgumentNullException("authToken");
+
+            // get the user for the token and check if the token is valid at the same time
+            AccountInfoRequest infoReq = new AccountInfoRequest(authToken);
+            var accInfo = await seafWebConnection.SendRequestAsync(serverUri, infoReq);
+            return new SeafSession(seafWebConnection, accInfo.Email, serverUri, authToken);
+        }
+
+        /// <summary>
+        /// Create a seafile session for the given username and authentication token 
+        /// The validity of the username or token are not checked
+        /// (if they are wrong you may not be able to execute requests)
+        /// </summary>
+        public static SeafSession FromToken(Uri serverUri, string username, string authToken)
+        {
+            return FromToken(SeafConnectionFactory.GetDefaultConnection(), serverUri, username, authToken);
+        }
+
+        /// <summary>
+        /// Create a seafile session for the given username and authentication token using the given ISeafWebConnection
+        /// The validity of the username or token are not checked
+        /// (if they are wrong you may not be able to execute requests)
+        /// </summary>
+        public static SeafSession FromToken(ISeafWebConnection seafWebConnection, Uri serverUri, string username, string authToken)
+        {
+            if (seafWebConnection == null)
+                throw new ArgumentNullException("seafWebConnection");
+            if (serverUri == null)
+                throw new ArgumentNullException("serverUri");
+            if (username == null)
+                throw new ArgumentNullException("username");
+            if (authToken == null)
+                throw new ArgumentNullException("authToken");
+            
+            return new SeafSession(seafWebConnection, username, serverUri, authToken);
+        }
 
         /// <summary>
         /// Wraps an already existing seafile session
@@ -76,6 +134,62 @@ namespace SeafClient
             Username = username;
             ServerUri = serverUri;
             AuthToken = authToken;
+        }
+
+        /// <summary>
+        /// Ping the server without authentication
+        /// </summary>
+        /// <param name="serverUri"></param>
+        /// <returns></returns>
+        public static async Task<bool> Ping(Uri serverUri)
+        {
+            return await Ping(SeafConnectionFactory.GetDefaultConnection(), serverUri);
+        }
+
+        /// <summary>
+        /// Ping the server without authentication using the given ISeafWebConnection
+        /// </summary>
+        /// <param name="serverUri"></param>
+        /// <returns></returns>
+        public static async Task<bool> Ping(ISeafWebConnection seafWebConnection, Uri serverUri)
+        {
+            PingRequest r = new PingRequest();
+            return await seafWebConnection.SendRequestAsync(serverUri, r);
+        }
+
+        /// <summary>
+        /// Retrieve some general information about the Seafile server at the given address
+        /// </summary>
+        /// <param name="seafWebConnection"></param>
+        /// <param name="serverUri"></param>
+        /// <returns></returns>
+        public static async Task<SeafServerInfo> GetServerInfo(Uri serverUri)
+        {
+            return await GetServerInfo(SeafConnectionFactory.GetDefaultConnection(), serverUri);
+        }
+
+        /// <summary>
+        /// Retrieve some general information about the Seafile server at the given address using
+        /// the given ISeafWebConnection
+        /// </summary>
+        /// <param name="seafWebConnection"></param>
+        /// <param name="serverUri"></param>
+        /// <returns></returns>
+        public static async Task<SeafServerInfo> GetServerInfo(ISeafWebConnection seafWebConnection, Uri serverUri)
+        {
+            GetServerInfoRequest r = new GetServerInfoRequest();
+            return await seafWebConnection.SendRequestAsync(serverUri, r);
+        }
+
+        /// <summary>
+        /// Ping the server using the current session
+        /// (Can be used to check whether the session is still valid)
+        /// </summary>        
+        /// <returns></returns>
+        public async Task<bool> Ping()
+        {
+            PingRequest r = new PingRequest(AuthToken);
+            return await webConnection.SendRequestAsync(ServerUri, r);
         }
 
         /// <summary>

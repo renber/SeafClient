@@ -57,6 +57,7 @@
     <Compile Include="BaseFunctionsTests.cs" />
     <Compile Include="DirectoryEntryTests.cs" />
     <Compile Include="LibraryTests.cs" />
+    <Compile Include="MockedSeafConnection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SeafTestClassBase.cs" />
   </ItemGroup>

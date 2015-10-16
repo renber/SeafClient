@@ -14,7 +14,7 @@ namespace SeafClient
     /// <summary>
     /// Base class for Seafile web api requests
     /// </summary>    
-    public abstract class SeafRequest<TResponse>
+    public abstract class SeafRequest<TResponse> : ISeafRequest
     {
         /// <summary>
         /// The command uri for this command

@@ -1,5 +1,4 @@
-﻿using SeafClient.Exceptions;
-using SeafClient.Utils;
+﻿using SeafClient.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
