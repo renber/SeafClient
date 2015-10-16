@@ -1,11 +1,11 @@
 # SeafClient
 
-This project is a wrapper for the [Seafile](https://www.seafile.com) web api  for .Net as portable class library (PCL).
-It can be used in desktop apps, Windows Store applications as well as in apps for Windows Phone 7 and 8.x.
+This project is a client implementation for the [Seafile](https://www.seafile.com) Web API  for .Net as portable class library (PCL).
+It can be used in desktop apps, Windows Store applications as well as in apps for Windows Phone 7.5+ and 8.x.
 
-The aim is to create a library to easily access a Seafile server and the files stored there through a .Net application in a strong-typed fashion (no custom JSON parsing and with meaningful error messages, etc. The library uses the async/await methods.
+The aim is to create a library to easily access a Seafile server and the files stored there through a .Net application in a strong-typed fashion (no custom JSON parsing and with meaningful error messages, etc.) The library uses async/await methods for requests to the Seafile server.
 
-The SeafClient library is available on NuGet [here](https://www.nuget.org/packages/SeafClient/).
+The current stable release of the SeafClient library is available on NuGet [here](https://www.nuget.org/packages/SeafClient/).
 
 ## Usage example (C#)
 
@@ -59,7 +59,7 @@ async Task Demo()
 ```
 
 ## Currently implemented requests
-See the [official Seafile Web APi documentation](http://manual.seafile.com/develop/web_api.html) for a list of all available requests. The following requests are currently implemented:
+See the [official Seafile Web API documentation](http://manual.seafile.com/develop/web_api.html) for a list of all available requests. The following requests are currently implemented:
 
 * Authentication
 * Check Account Info
