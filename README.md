@@ -45,9 +45,9 @@ async Task Demo()
             var content = await session.ListDirectory(firstLib, "/");
             foreach (var dirEntry in content)
                 if (dirEntry.Type == SeafClient.Types.DirEntryType.File)
-                    Debug.WriteLine(dirEntry.Name);
-                else
                     Debug.WriteLine(dirEntry.Name + " - " + dirEntry.Size.ToString() + " Bytes");
+                else
+                    Debug.WriteLine(dirEntry.Name);
         }
 
     } catch (SeafException e)
