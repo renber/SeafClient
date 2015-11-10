@@ -48,7 +48,7 @@ namespace SeafClient.Requests
                 foreach (var hi in GetAdditionalHeaders())
                     message.Headers.Add(hi.Key, hi.Value);
 
-                message.Content = new CredentialFormContent(Username, Password);
+                message.Content = new CredentialFormContent(new KeyValuePair<String, Char[]>("username", Username.ToCharArray()), new KeyValuePair<String, Char[]>("password", Password));
 
                 return message;
             }

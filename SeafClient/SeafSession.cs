@@ -241,6 +241,14 @@ namespace SeafClient
         }
 
         /// <summary>
+        /// List the content of the root directory ("/") of the given linrary
+        /// </summary>
+        public async Task<IList<SeafDirEntry>> ListDirectory(SeafLibrary library)
+        {
+            return await ListDirectory(library, "/");
+        }
+
+        /// <summary>
         /// List the content of the given directory of the given linrary
         /// </summary>
         /// <param name="library"></param>
@@ -357,6 +365,16 @@ namespace SeafClient
 
             UploadRequest upReq = new UploadRequest(AuthToken, uploadLink, targetDirectory, targetFilename, fileContent, progressCallback);
             return await webConnection.SendRequestAsync(ServerUri, upReq);
+        }
+
+        /// <summary>
+        /// Provide the password for the given encrypted library
+        /// in order to be able to access its contents
+        /// </summary>
+        public async Task<bool> DecryptLibrary(SeafLibrary library, char[] password)
+        {
+            DecryptLibraryRequest r = new DecryptLibraryRequest(AuthToken, library.Id, password);
+            return await webConnection.SendRequestAsync(ServerUri, r);
         }
         
     }

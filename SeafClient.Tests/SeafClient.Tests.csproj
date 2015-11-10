@@ -60,6 +60,7 @@
     <Compile Include="MockedSeafConnection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SeafTestClassBase.cs" />
+    <Compile Include="StarringTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SeafClient\SeafClient.csproj">

@@ -17,11 +17,6 @@ namespace SeafClient.Requests
             get { return "api2/shared-repos/"; }
         }
 
-        public override HttpAccessMethod HttpAccessMethod
-        {
-            get { return SeafClient.HttpAccessMethod.Get; }
-        }
-
         public ListSharedLibrariesRequest(string authToken)
             : base(authToken)
         {

@@ -23,11 +23,6 @@ namespace SeafClient.Requests
             get { return String.Format("api2/repos/{0}/thumbnail/?p={1}&size={2:d}", LibraryId, WebUtility.UrlEncode(Path), ThumbnailSize); }
         }
 
-        public override HttpAccessMethod HttpAccessMethod
-        {
-            get { return HttpAccessMethod.Get; }
-        }
-
         public override async Task<byte[]> ParseResponseAsync(System.Net.Http.HttpResponseMessage msg)
         {
             return await msg.Content.ReadAsByteArrayAsync();            

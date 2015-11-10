@@ -15,11 +15,6 @@ namespace SeafClient.Requests
         {
             get { return "api2/server-info/"; }
         }
-
-        public override HttpAccessMethod HttpAccessMethod
-        {
-            get { return HttpAccessMethod.Get; }
-        }
     }
 
     public class SeafServerInfo

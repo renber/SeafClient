@@ -14,7 +14,9 @@ namespace SeafConsole
         static void Main(string[] args)
         {
             // prompt the user for seafile server, username & password
-            string host = "";
+            string host = "https://raspsea.my-homeip.de:48000";
+            string user = "dev@genie-soft.de";
+
             bool validUri = false;
             Uri serverUri = null;
 
@@ -33,8 +35,7 @@ namespace SeafConsole
                     host = "";
                 }
             }
-
-            string user = "";
+            
             MiscUtils.GetStringFromConsole("Please enter your username", ref user);
 
             // use secure string to retrieve the password from the user

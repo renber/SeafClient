@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SeafConsole", "Samples\Seaf
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NugetTest", "Samples\NugetTest\NugetTest.csproj", "{07FA1235-BCE8-4EF8-AB5A-3ECEEDDD6A1A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SeafPlayground", "SeafPlayground\SeafPlayground.csproj", "{519D39C6-5038-4CFF-A25D-218B6A29D5B8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +37,10 @@ Global
 		{07FA1235-BCE8-4EF8-AB5A-3ECEEDDD6A1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{07FA1235-BCE8-4EF8-AB5A-3ECEEDDD6A1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{07FA1235-BCE8-4EF8-AB5A-3ECEEDDD6A1A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{519D39C6-5038-4CFF-A25D-218B6A29D5B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{519D39C6-5038-4CFF-A25D-218B6A29D5B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{519D39C6-5038-4CFF-A25D-218B6A29D5B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{519D39C6-5038-4CFF-A25D-218B6A29D5B8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -42,5 +48,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{AE20190A-E6D9-4F2A-982E-F5BF1CA77CD2} = {4F20BAA1-F76E-47AE-A3D6-2A1A9614738C}
 		{07FA1235-BCE8-4EF8-AB5A-3ECEEDDD6A1A} = {4F20BAA1-F76E-47AE-A3D6-2A1A9614738C}
+		{519D39C6-5038-4CFF-A25D-218B6A29D5B8} = {4F20BAA1-F76E-47AE-A3D6-2A1A9614738C}
 	EndGlobalSection
 EndGlobal

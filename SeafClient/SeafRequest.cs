@@ -23,8 +23,15 @@ namespace SeafClient
 
         /// <summary>
         /// The http method to execute this command with
+        /// (default is GET)
         /// </summary>
-        public abstract HttpAccessMethod HttpAccessMethod { get; }
+        public virtual HttpAccessMethod HttpAccessMethod
+        {
+            get
+            {
+                return HttpAccessMethod.Get;
+            }
+        }
 
         /// <summary>
         /// Get additional header values to send with this command

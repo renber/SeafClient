@@ -45,11 +45,6 @@ namespace SeafClient.Requests
             }
         }
 
-        public override HttpAccessMethod HttpAccessMethod
-        {
-            get { return HttpAccessMethod.Get; }
-        }
-
         public ListDirectoryEntriesRequest(string authToken, string libraryId, string path)
             : this(authToken, libraryId, path, DirEntryFilter.FilesAndDirectories, false)
         {
@@ -118,8 +113,8 @@ namespace SeafClient.Requests
             {
                 case HttpStatusCode.NotFound:
                     return new SeafError(msg.StatusCode, SeafErrorCode.PathDoesNotExist);                    
-                case HttpStatusCode.RequestTimeout:
-                    return new SeafError(msg.StatusCode, SeafErrorCode.EncryptedRepo_PasswordNotProvided);                    
+                case (HttpStatusCode)440:
+                    return new SeafError(msg.StatusCode, SeafErrorCode.EncryptedLibrary_PasswordNotProvided);                    
                 default:
                     return base.GetSeafError(msg);
             }

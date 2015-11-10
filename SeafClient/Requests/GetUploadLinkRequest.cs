@@ -18,11 +18,6 @@ namespace SeafClient.Requests
             get { return String.Format("api2/repos/{0}/upload-link/", LibraryId); }
         }
 
-        public override HttpAccessMethod HttpAccessMethod
-        {
-            get { return HttpAccessMethod.Get; }
-        }
-
         public GetUploadLinkRequest(string authToken, string libraryId)
             : base(authToken)
         {

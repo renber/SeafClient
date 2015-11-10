@@ -55,6 +55,7 @@
     <DocumentationFile>bin\Release\SeafClient.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Converters\SeafEntryTypeConverter.cs" />
     <Compile Include="Converters\SeafPermissionConverter.cs" />
     <Compile Include="Converters\SeafTimestampConverter.cs" />
     <Compile Include="ISeafRequest.cs" />
@@ -63,19 +64,25 @@
     <Compile Include="Requests\AuthRequest.cs" />
     <Compile Include="Exceptions\SeafException.cs" />
     <Compile Include="Requests\CreateDirectoryRequest.cs" />
+    <Compile Include="Requests\DecryptLibraryRequest.cs" />
     <Compile Include="Requests\DeleteDirEntryRequest.cs" />
     <Compile Include="Requests\GetFileDownloadLinkRequest.cs" />
+    <Compile Include="Requests\GetServerInfoRequest.cs" />
     <Compile Include="Requests\GetThumbnailImageRequest.cs" />
     <Compile Include="Requests\GetUploadLinkRequest.cs" />
     <Compile Include="Requests\ListDirectoryEntriesRequest.cs" />
     <Compile Include="Requests\ListLibrariesRequest.cs" />
     <Compile Include="Requests\ListSharedLibrariesRequest.cs" />
+    <Compile Include="Requests\ListStarredFilesRequest.cs" />
     <Compile Include="Requests\PingRequest.cs" />
     <Compile Include="Requests\RenameDirectoryRequest.cs" />
     <Compile Include="Requests\RenameFileRequest.cs" />
     <Compile Include="Requests\SessionRequest.cs" />
+    <Compile Include="Requests\StarFileRequest.cs" />
+    <Compile Include="Requests\UnstarFileRequest.cs" />
     <Compile Include="Requests\UploadRequest.cs" />
     <Compile Include="Requests\UserAvatarRequest.cs" />
+    <Compile Include="SeafConnectionFactory.cs" />
     <Compile Include="Types\SeafDirEntry.cs" />
     <Compile Include="Types\SeafLibrary.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

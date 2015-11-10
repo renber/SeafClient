@@ -19,11 +19,6 @@ namespace SeafClient.Requests
             get { return "api2/account/info/"; }
         }
 
-        public override HttpAccessMethod HttpAccessMethod
-        {
-            get { return SeafClient.HttpAccessMethod.Get; }
-        }
-
         public override SeafError GetSeafError(HttpResponseMessage msg)
         {
             switch(msg.StatusCode)

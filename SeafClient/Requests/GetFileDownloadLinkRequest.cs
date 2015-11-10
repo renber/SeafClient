@@ -23,11 +23,6 @@ namespace SeafClient.Requests
             get { return String.Format("api2/repos/{0}/file/?p={1}", LibraryId, WebUtility.UrlEncode(Path)); }
         }
 
-        public override HttpAccessMethod HttpAccessMethod
-        {
-            get { return HttpAccessMethod.Get; }
-        }
-
         public GetFileDownloadLinkRequest(string authToken, string libraryId, string path)
             : base(authToken)
         {

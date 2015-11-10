@@ -32,7 +32,7 @@ namespace SeafClient.Tests
             Assert.AreEqual(HttpMethod.Post, httpReq.Method);
             Assert.AreEqual(DummyServerUri + "api2/auth-token/", httpReq.RequestUri.ToString());
             string postContent = ExecuteSync(() => httpReq.Content.ReadAsStringAsync());
-            Assert.AreEqual("username=TestUser@test.com&password=mypw", postContent);
+            Assert.AreEqual("username=" + WebUtility.UrlEncode("TestUser@test.com") + "&password=mypw", postContent);
 
             // ensure that the password array has been cleared
             char[] nullArray = new char[4];

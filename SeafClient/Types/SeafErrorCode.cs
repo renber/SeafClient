@@ -16,12 +16,14 @@ namespace SeafClient.Types
     {
         NoDetails = -1,
         InvalidCredentials = 1,
-        PathDoesNotExist = 2,     
-        FileNotFound = 3,
-        EncryptedRepo_PasswordNotProvided = 4,
-        InvalidToken = 5,
-        OutOfQuota = 6,
-        NotEnoughPermissions = 7        
+        PathDoesNotExist,     
+        FileNotFound,
+        EncryptedLibrary_PasswordNotProvided,
+        InvalidToken,
+        OutOfQuota,
+        NotEnoughPermissions,
+        InvalidLibraryPassword,
+        LibraryIsNotEncrypted        
     }
 
     /// <summary>
@@ -60,14 +62,18 @@ namespace SeafClient.Types
                     return "The path does not exist.";
                 case SeafErrorCode.FileNotFound:
                     return "The file does not exist.";
-                case SeafErrorCode.EncryptedRepo_PasswordNotProvided:
-                    return "The repository is enrypted but password was not provided.";
+                case SeafErrorCode.EncryptedLibrary_PasswordNotProvided:
+                    return "The library is enrypted but password was not provided.";
                 case SeafErrorCode.InvalidToken:
                     return "The token is invalid.";
                 case SeafErrorCode.OutOfQuota:
                     return "The user ran out of quota.";
                 case SeafErrorCode.NotEnoughPermissions:
-                    return "Not enough permissions to execute this request.";                
+                    return "Not enough permissions to execute this request.";
+                case SeafErrorCode.InvalidLibraryPassword:
+                    return "The provided password is invalid.";
+                case SeafErrorCode.LibraryIsNotEncrypted:
+                    return "The library decryption request failed, since the library is not encrypted.";
                 default:
                     // print the http status code
                     return httpStatusDescription;

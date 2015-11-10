@@ -24,11 +24,6 @@ namespace SeafClient.Requests
             get { return String.Format("api2/avatars/user/{0}/resized/{1:d}/", Username, Size); }
         }
 
-        public override HttpAccessMethod HttpAccessMethod
-        {
-            get { return HttpAccessMethod.Get; }
-        }
-
         public UserAvatarRequest(string authToken, string username, int size)
             : base(authToken)
         {

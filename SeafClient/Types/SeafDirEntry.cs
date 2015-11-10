@@ -12,32 +12,32 @@ namespace SeafClient.Types
     /// </summary>
     public class SeafDirEntry
     {
-        public string Id { get; set; }
+        public virtual string Id { get; set; }
 
         [JsonIgnore]
-        public String LibraryId { get; set; }
+        public virtual String LibraryId { get; set; }
 
-        public DirEntryType Type { get; set; }        
+        public virtual DirEntryType Type { get; set; }        
 
-        public string Name { get; set; }
+        public virtual string Name { get; set; }
 
         /// <summary>
         /// Time of the last modification of this entry
         /// (as UNIX timestamp)
         /// </summary>
         [JsonProperty("mtime"), JsonConverter(typeof(SeafTimestampConverter))]
-        public DateTime Timestamp { get; set; }
+        public virtual DateTime Timestamp { get; set; }
 
         /// <summary>
         /// File size (only if Type is File)
         /// </summary>
-        public long Size { get; set; }
+        public virtual long Size { get; set; }        
 
         /// <summary>
         /// The path of this item in its library
-        /// </summary>
+        /// </summary>        
         [JsonIgnore]
-        public string Path { get; set; }
+        public virtual string Path { get; set; }
     }
 
     public enum DirEntryType

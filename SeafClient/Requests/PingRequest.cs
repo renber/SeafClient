@@ -27,11 +27,6 @@ namespace SeafClient.Requests
             }
         }
 
-        public override HttpAccessMethod HttpAccessMethod
-        {
-            get { return HttpAccessMethod.Get; }
-        }
-
         /// <summary>
         /// Create a ping request which does not use authentication
         /// </summary>

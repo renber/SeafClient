@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace SeafClient.Converters
 {
     /// <summary>
-    /// JsonConverter 
+    /// JsonConverter for converting between dotnet datetimes and unix timestamps
     /// </summary>
     class SeafTimestampConverter : JsonConverter
     {

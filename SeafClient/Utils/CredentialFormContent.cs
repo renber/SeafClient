@@ -10,44 +10,80 @@ using System.Threading.Tasks;
 namespace SeafClient.Utils
 {
     /// <summary>
-    /// A FormUrlEncodedContent implementation to transmit username and password
-    /// which zeroes out the password array as soon as the password has been sent
+    /// A FormUrlEncodedContent implementation to transmit form data (key-value pairs)
+    /// which zeroes out the value arrays as soon as the content has been written to a request stream
     /// </summary>
     class CredentialFormContent : FormUrlEncodedContent
     {
-        private  string Username {get; set; }
-        private char[] Password { get; set; }
+        List<KeyValuePair<string, char[]>> FormData;
 
-        public CredentialFormContent(string username, char[] password)
+        public CredentialFormContent(params KeyValuePair<string, char[]>[] formData)
             : base(new KeyValuePair<string,string>[0])
         {
-            Username = username;
-            Password = new char[password.Length];
-            Array.Copy(password, Password, password.Length);
+            FormData = new List<KeyValuePair<string, char[]>>();
+            foreach(var kv in formData)
+            {
+                var pair = new KeyValuePair<string, char[]>(kv.Key, new char[kv.Value.Length]);
+                Array.Copy(kv.Value, pair.Value, kv.Value.Length);
+                FormData.Add(pair);
+            }
         }
 
         protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context)
         {
             try
             {
-                byte[] buf = Encoding.UTF8.GetBytes("username=" + Username);
-                await stream.WriteAsync(buf, 0, buf.Length);
+                byte[] andBuf = Encoding.UTF8.GetBytes("&");
 
-                buf = Encoding.UTF8.GetBytes("&password=");
-                await stream.WriteAsync(buf, 0, buf.Length);
+                for (int i = 0; i < FormData.Count; i++)
+                {
+                    var pair = FormData[i];
+                    // enumerate parameters with &
+                    if (i > 0)
+                        await stream.WriteAsync(andBuf, 0, andBuf.Length);
 
-                // transfer passwor din UTF-8
-                await stream.WriteAsync(Encoding.UTF8.GetBytes(Password), 0, Password.Length);
+                    // write key=value
+                    await WritePairToStream(stream, pair);
+                }
             }
             finally
             {
                 ClearPassword();
-            }            
+            }
+        }
+
+        async Task WritePairToStream(Stream stream, KeyValuePair<String, char[]> pair)
+        {
+            byte[] eqValue = Encoding.UTF8.GetBytes("=");
+            byte[] utf8Value = null;
+            byte[] encodedValue = null;
+            try
+            {
+                // write key (and escape it first)
+                utf8Value = Encoding.UTF8.GetBytes(pair.Key);
+                encodedValue = WebUtility.UrlEncodeToBytes(utf8Value, 0, utf8Value.Length);
+                await stream.WriteAsync(encodedValue, 0, encodedValue.Length);
+                // write '='                
+                await stream.WriteAsync(eqValue, 0, eqValue.Length);
+                Array.Clear(utf8Value, 0, utf8Value.Length);
+
+                // write value (and escape it first)
+                utf8Value = Encoding.UTF8.GetBytes(pair.Value);
+                encodedValue = WebUtility.UrlEncodeToBytes(utf8Value, 0, utf8Value.Length);
+                await stream.WriteAsync(encodedValue, 0, encodedValue.Length);
+            } finally
+            {                
+                if (encodedValue != null)
+                    Array.Clear(encodedValue, 0, encodedValue.Length);
+                if (utf8Value != null)
+                    Array.Clear(utf8Value, 0, utf8Value.Length);
+            }
         }
 
         void ClearPassword()
         {
-            Array.Clear(Password, 0, Password.Length);
+            foreach(var pair in FormData)
+                Array.Clear(pair.Value, 0, pair.Value.Length);
         }
 
         protected override bool TryComputeLength(out long length)
