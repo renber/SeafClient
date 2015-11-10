@@ -45,9 +45,9 @@ async Task Demo()
             var content = await session.ListDirectory(firstLib, "/");
             foreach (var dirEntry in content)
                 if (dirEntry.Type == SeafClient.Types.DirEntryType.File)
-                    Debug.WriteLine(dirEntry.Name);
-                else
                     Debug.WriteLine(dirEntry.Name + " - " + dirEntry.Size.ToString() + " Bytes");
+                else
+                    Debug.WriteLine(dirEntry.Name);
         }
 
     } catch (SeafException e)
@@ -62,6 +62,8 @@ async Task Demo()
 See the [official Seafile Web API documentation](http://manual.seafile.com/develop/web_api.html) for a list of all available requests. The following requests are currently implemented:
 
 * Authentication
+* Ping (with and without authentication)
+* Get Server Info
 * Check Account Info
 * Get User Avatar
 * List Libraries / List Shared Libraries
