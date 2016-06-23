@@ -33,7 +33,7 @@ namespace SeafClient
         /// <param name="serverUrl">The server url to connect to (including protocol (http or https) and port)</param>
         /// <param name="username">The username to login with</param>
         /// <param name="pwd">The password for the given user</param>
-        public static async Task<SeafSession> Establish(Uri serverUri, string username, char[] pwd)
+        public static async Task<SeafSession> Establish(Uri serverUri, string username, string pwd)
         {
             return await Establish(SeafConnectionFactory.GetDefaultConnection(), serverUri, username, pwd);
         }
@@ -44,7 +44,7 @@ namespace SeafClient
         /// <param name="serverUrl">The server url to connect to (including protocol (http or https) and port)</param>
         /// <param name="username">The username to login with</param>
         /// <param name="pwd">The password for the given user</param>
-        public static async Task<SeafSession> Establish(ISeafWebConnection seafWebConnection, Uri serverUri, string username, char[] pwd)
+        public static async Task<SeafSession> Establish(ISeafWebConnection seafWebConnection, Uri serverUri, string username, string pwd)
         {
             if (seafWebConnection == null)
                 throw new ArgumentNullException("seafWebConnection");
