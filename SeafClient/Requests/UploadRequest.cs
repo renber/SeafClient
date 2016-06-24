@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -115,11 +116,8 @@ namespace SeafClient.Requests
 
             // transmit the content length, for this we use the private method TryComputeLength() called by reflection
             long conLen = 0;
-#if WINDOWS_PHONE_7
-                var func = request.GetType().GetMethod("TryComputeLength", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-#else
-            var func = System.Reflection.RuntimeReflectionExtensions.GetRuntimeMethod(content.GetType(), "TryComputeLength", new Type[] { typeof(long) });
-#endif
+            var func = RuntimeReflectionExtensions.GetRuntimeMethod(content.GetType(), "TryComputeLength", new Type[] { typeof(long) });
+            func = typeof(MultipartContent).GetTypeInfo().GetDeclaredMethod("TryComputeLength");
             object[] args = new object[] { 0L };
             var r = func.Invoke(content, args);
             if (r is bool && (bool)r)
