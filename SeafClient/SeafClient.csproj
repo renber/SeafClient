@@ -74,8 +74,10 @@
     <Compile Include="Requests\ListLibrariesRequest.cs" />
     <Compile Include="Requests\ListSharedLibrariesRequest.cs" />
     <Compile Include="Requests\ListStarredFilesRequest.cs" />
+    <Compile Include="Requests\CopyFileRequest.cs" />
     <Compile Include="Requests\PingRequest.cs" />
     <Compile Include="Requests\RenameDirectoryRequest.cs" />
+    <Compile Include="Requests\MoveFileRequest.cs" />
     <Compile Include="Requests\RenameFileRequest.cs" />
     <Compile Include="Requests\SessionRequest.cs" />
     <Compile Include="Requests\StarFileRequest.cs" />

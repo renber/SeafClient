@@ -314,6 +314,32 @@ namespace SeafClient
         }
 
         /// <summary>
+        /// Move the given file
+        /// </summary>
+        /// <param name="library"></param>
+        /// <param name="directoryPath"></param>
+        /// <param name="newName"></param>
+        /// <returns></returns>
+        public async Task<bool> CopyFile(SeafLibrary library, string filePath, SeafLibrary targetLibrary, string targetDirectory)
+        {
+            CopyFileRequest req = new CopyFileRequest(AuthToken, library.Id, filePath, targetLibrary.Id, targetDirectory);
+            return await webConnection.SendRequestAsync(ServerUri, req);
+        }
+
+        /// <summary>
+        /// Move the given file
+        /// </summary>
+        /// <param name="library"></param>
+        /// <param name="directoryPath"></param>
+        /// <param name="newName"></param>
+        /// <returns></returns>
+        public async Task<bool> MoveFile(SeafLibrary library, string filePath, SeafLibrary targetLibrary, string targetDirectory)
+        {
+            MoveFileRequest req = new MoveFileRequest(AuthToken, library.Id, filePath, targetLibrary.Id, targetDirectory);
+            return await webConnection.SendRequestAsync(ServerUri, req);
+        }
+
+        /// <summary>
         /// Delete the given directory in the given library
         /// </summary>
         /// <param name="library"></param>
