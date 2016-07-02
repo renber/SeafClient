@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata>
+        <id>SeafClient</id>
+        <title>Seafile Client</title>
+        <version>1.0.1</version>
+		<authors>Rene Bergelt</authors>
+		<owners>Rene Bergelt</owners>
+		<licenseUrl>https://raw.githubusercontent.com/renber/SeafClient/master/LICENSE</licenseUrl>
+		<projectUrl>https://github.com/renber/SeafClient</projectUrl>
+		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<description>This project is a wrapper for the Seafile web api  for .Net implemented as a portable class library (PCL).
+
+The aim is to create a library to easily access a Seafile server and the files stored there through a .Net application in a strong-typed fashion (no custom JSON parsing and with meaningful error messages, etc. The library uses async/await methods for all requests sent to the server.</description>
+		<summary>This project is a wrapper for the Seafile web api  for .Net implemented as a portable class library (PCL).</summary>
+		<iconUrl>http://i.utdstc.com/icons/120/seafile.png</iconUrl>
+        <copyright>2015</copyright>
+		<language>en-US</language>
+        <tags>seafile, web, cloud, storage, access, rest</tags>
+        <dependencies>
+            <group>
+                <dependency id="Newtonsoft.Json" version="7.0.1" />
+            </group>
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="SeafClient\bin\Release\SeafClient.dll" target="lib\uap10.0"/>
+        <file src="SeafClient\bin\Release\SeafClient.dll" target="lib"/>
+    </files>
+</package>

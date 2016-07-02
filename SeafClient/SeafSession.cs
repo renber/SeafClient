@@ -33,7 +33,7 @@ namespace SeafClient
         /// <param name="serverUrl">The server url to connect to (including protocol (http or https) and port)</param>
         /// <param name="username">The username to login with</param>
         /// <param name="pwd">The password for the given user</param>
-        public static async Task<SeafSession> Establish(Uri serverUri, string username, char[] pwd)
+        public static async Task<SeafSession> Establish(Uri serverUri, string username, string pwd)
         {
             return await Establish(SeafConnectionFactory.GetDefaultConnection(), serverUri, username, pwd);
         }
@@ -44,7 +44,7 @@ namespace SeafClient
         /// <param name="serverUrl">The server url to connect to (including protocol (http or https) and port)</param>
         /// <param name="username">The username to login with</param>
         /// <param name="pwd">The password for the given user</param>
-        public static async Task<SeafSession> Establish(ISeafWebConnection seafWebConnection, Uri serverUri, string username, char[] pwd)
+        public static async Task<SeafSession> Establish(ISeafWebConnection seafWebConnection, Uri serverUri, string username, string pwd)
         {
             if (seafWebConnection == null)
                 throw new ArgumentNullException("seafWebConnection");
@@ -310,6 +310,32 @@ namespace SeafClient
         public async Task<bool> RenameFile(SeafLibrary library, string filePath, string newName)
         {
             RenameFileRequest req = new RenameFileRequest(AuthToken, library.Id, filePath, newName);
+            return await webConnection.SendRequestAsync(ServerUri, req);
+        }
+
+        /// <summary>
+        /// Move the given file
+        /// </summary>
+        /// <param name="library"></param>
+        /// <param name="directoryPath"></param>
+        /// <param name="newName"></param>
+        /// <returns></returns>
+        public async Task<bool> CopyFile(SeafLibrary library, string filePath, SeafLibrary targetLibrary, string targetDirectory)
+        {
+            CopyFileRequest req = new CopyFileRequest(AuthToken, library.Id, filePath, targetLibrary.Id, targetDirectory);
+            return await webConnection.SendRequestAsync(ServerUri, req);
+        }
+
+        /// <summary>
+        /// Move the given file
+        /// </summary>
+        /// <param name="library"></param>
+        /// <param name="directoryPath"></param>
+        /// <param name="newName"></param>
+        /// <returns></returns>
+        public async Task<bool> MoveFile(SeafLibrary library, string filePath, SeafLibrary targetLibrary, string targetDirectory)
+        {
+            MoveFileRequest req = new MoveFileRequest(AuthToken, library.Id, filePath, targetLibrary.Id, targetDirectory);
             return await webConnection.SendRequestAsync(ServerUri, req);
         }
 

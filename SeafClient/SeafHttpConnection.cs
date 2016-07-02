@@ -48,7 +48,9 @@ namespace SeafClient
             HttpRequestMessage requestMessage = CreateHttpRequestMessage(serverUri, request);
 
             HttpResponseMessage response;
-            using (HttpClient client = new HttpClient())            
+            HttpClientHandler handler = new HttpClientHandler();
+            handler.AllowAutoRedirect = false;
+            using (HttpClient client = new HttpClient(handler))   
                 response = await client.SendAsync(requestMessage);                            
 
             if (request.WasSuccessful(response))

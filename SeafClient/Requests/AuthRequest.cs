@@ -18,7 +18,7 @@ namespace SeafClient.Requests
     public class AuthRequest : SeafRequest<AuthResponse>
     {
         protected string Username { get; set; }
-        protected char[] Password { get; set;  }
+        protected string Password { get; set;  }
 
         public override string CommandUri
         {
@@ -27,35 +27,22 @@ namespace SeafClient.Requests
 
         public override HttpAccessMethod HttpAccessMethod
         {
-            get { return HttpAccessMethod.Custom; }
+            get { return HttpAccessMethod.Post; }
         }
 
-        public AuthRequest(string username, char[] password)
+        public AuthRequest(string username, string password)
         {
             Username = username;
             Password = password;
         }
 
-        public override HttpRequestMessage GetCustomizedRequest(Uri serverUri)
+        public override IEnumerable<KeyValuePair<string, string>> GetPostParameters()
         {
-            try
-            {                                
-                Uri uri = new Uri(serverUri, CommandUri);
-
-                HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Post, uri);
-                
-                message.Headers.Referrer = uri;
-                foreach (var hi in GetAdditionalHeaders())
-                    message.Headers.Add(hi.Key, hi.Value);
-
-                message.Content = new CredentialFormContent(new KeyValuePair<String, Char[]>("username", Username.ToCharArray()), new KeyValuePair<String, Char[]>("password", Password));
-
-                return message;
-            }
-            finally
+            return new[]
             {
-                ClearPassword();
-            }
+                new KeyValuePair<string, string>("username", Username),
+                new KeyValuePair<string, string>("password", Password),
+            };
         }
 
         public override SeafError GetSeafError(HttpResponseMessage msg)
@@ -68,7 +55,7 @@ namespace SeafClient.Requests
 
         void ClearPassword()
         {
-            Array.Clear(Password, 0, Password.Length);
+            Password = null;
         }
     }
 
