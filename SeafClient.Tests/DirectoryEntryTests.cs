@@ -100,5 +100,64 @@ namespace SeafClient.Tests
             Assert.IsFalse(req.WasSuccessful(m));
             Assert.AreEqual(SeafErrorCode.PathDoesNotExist, req.GetSeafError(m).SeafErrorCode);
         }
+
+        [TestMethod]
+        public void Test_MoveFileEntry_Success()
+        {
+            MoveFileRequest req = new MoveFileRequest(FakeToken, FakeRepoId, "/test/file.txt", FakeRepoId, "/newdir/");
+
+            HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.MovedPermanently);
+            m.Content = new StringContent("\"success\"");
+
+            Assert.IsTrue(req.WasSuccessful(m));
+        }
+
+        [TestMethod]
+        public void Test_MoveFileEntry_Error()
+        {
+            MoveFileRequest req = new MoveFileRequest(FakeToken, FakeRepoId, "/test/file.txt", FakeRepoId, "/newdir/");
+
+            HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.Forbidden);            
+            Assert.IsFalse(req.WasSuccessful(m));
+
+            m = new HttpResponseMessage(HttpStatusCode.BadRequest);
+            Assert.IsFalse(req.WasSuccessful(m));
+
+            // there seems to be a bug in the seafile web api
+            // as the server returns NotFound even when the renaming was successful
+            // so we cannot test this
+            //m = new HttpResponseMessage(HttpStatusCode.NotFound);
+            //Assert.IsFalse(req.WasSuccessful(m));
+
+            m = new HttpResponseMessage(HttpStatusCode.InternalServerError);
+            Assert.IsFalse(req.WasSuccessful(m));
+        }
+
+
+        [TestMethod]
+        public void Test_CopyFileEntry_Success()
+        {
+            CopyFileRequest req = new CopyFileRequest(FakeToken, FakeRepoId, "/test/file.txt", FakeRepoId, "/newdir/");
+
+            HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.OK);
+            m.Content = new StringContent("\"success\"");
+
+            Assert.IsTrue(req.WasSuccessful(m));
+        }
+
+        [TestMethod]
+        public void Test_CopyFileEntry_Error()
+        {
+            CopyFileRequest req = new CopyFileRequest(FakeToken, FakeRepoId, "/test/file.txt", FakeRepoId, "/newdir/");
+
+            HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.Forbidden);
+            Assert.IsFalse(req.WasSuccessful(m));
+
+            m = new HttpResponseMessage(HttpStatusCode.BadRequest);
+            Assert.IsFalse(req.WasSuccessful(m));
+
+            m = new HttpResponseMessage(HttpStatusCode.InternalServerError);
+            Assert.IsFalse(req.WasSuccessful(m));
+        }
     }
 }
