@@ -7,13 +7,15 @@ using System.Text;
 
 namespace SeafClient.Requests
 {
-    public class RenameFileRequest : SessionRequest<bool>
+    public class MoveFileRequest : SessionRequest<bool>
     {
         public string LibraryId { get; set; }
 
         public string Path { get; set; }
 
-        public String NewFileName { get; set; }
+        public string TargetLibraryId { get; set; }
+
+        public string TargetDirectory { get; set; }
 
         public override string CommandUri
         {
@@ -30,16 +32,18 @@ namespace SeafClient.Requests
             foreach (var p in base.GetPostParameters())
                 yield return p;
 
-            yield return new KeyValuePair<string, string>("operation", "rename");
-            yield return new KeyValuePair<string, string>("newname", NewFileName);
+            yield return new KeyValuePair<string, string>("operation", "move");
+            yield return new KeyValuePair<string, string>("dst_repo", TargetLibraryId);
+            yield return new KeyValuePair<string, string>("dst_dir", TargetDirectory);
         }
 
-        public RenameFileRequest(string authToken, string libraryId, string path, string newFileName)
+        public MoveFileRequest(string authToken, string libraryId, string path, string targetLibraryId, string targetDirectory)
             : base(authToken)
         {
             LibraryId = libraryId;
             Path = path;
-            NewFileName = newFileName;
+            TargetLibraryId = targetLibraryId;
+            TargetDirectory = targetDirectory;
         }
 
         public override bool WasSuccessful(System.Net.Http.HttpResponseMessage msg)
@@ -49,7 +53,8 @@ namespace SeafClient.Requests
                 // as the server returns NotFound even when the renaming was successful
                 return true;
 
-            return msg.StatusCode == HttpStatusCode.Redirect
+            return msg.StatusCode == HttpStatusCode.OK
+                || msg.StatusCode == HttpStatusCode.Redirect
                 || msg.StatusCode == HttpStatusCode.MovedPermanently;
         }
 
