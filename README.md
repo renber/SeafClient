@@ -7,7 +7,8 @@ The aim is to create a library to easily access a Seafile server and the files s
 
 The current stable release of the SeafClient library is available on NuGet [here](https://www.nuget.org/packages/SeafClient/).
 
-![build status](https://ci.appveyor.com/api/projects/status/github/renber/seafclient?svg=true)
+This repository is automatically built and tested with AppVeyor: <br/>
+![build status](https://ci.appveyor.com/api/projects/status/github/renber/seafclient?svg=true) <br/>
 ![test status](http://teststatusbadge.azurewebsites.net/api/status/renber/seafclient)
 
 ## Usage example (C#)
