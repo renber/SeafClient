@@ -23,7 +23,8 @@ namespace SeafClient.Types
         OutOfQuota,
         NotEnoughPermissions,
         InvalidLibraryPassword,
-        LibraryIsNotEncrypted        
+        LibraryIsNotEncrypted,
+        ProtocolError        
     }
 
     /// <summary>

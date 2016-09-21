@@ -78,7 +78,13 @@ namespace SeafClient
         /// <returns></returns>
         public virtual SeafError GetSeafError(HttpResponseMessage msg)
         {
-            return new SeafError(msg.StatusCode, SeafErrorCode.NoDetails);            
+            switch(msg.StatusCode)
+            {
+                case HttpStatusCode.BadRequest:
+                    return new SeafError(msg.StatusCode, SeafErrorCode.ProtocolError);
+                default:
+                    return new SeafError(msg.StatusCode, SeafErrorCode.NoDetails);
+            }                
         }
 
         /// <summary>

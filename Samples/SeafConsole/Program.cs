@@ -1,7 +1,9 @@
 ﻿using SeafClient;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
@@ -14,8 +16,8 @@ namespace SeafConsole
         static void Main(string[] args)
         {
             // prompt the user for seafile server, username & password
-            string host = "https://raspsea.my-homeip.de:48000";
-            string user = "dev@genie-soft.de";
+            string host = "";
+            string user = "";
 
             bool validUri = false;
             Uri serverUri = null;
@@ -73,8 +75,8 @@ namespace SeafConsole
                 Console.Write("Connecting...");
                 SeafSession session = await SeafSession.Establish(host, user, pw);
                 Console.WriteLine("OK");
-                Console.WriteLine();
-
+                Console.WriteLine();                                
+                
                 // ping the server
                 Console.Write("Pinging the server...");
                 if (await session.Ping())
@@ -102,8 +104,14 @@ namespace SeafConsole
                     string permission = lib.Permission == SeafClient.Types.SeafPermission.ReadOnly ? "r" : "rw";
                     lines.Add(new string[] { lib.Timestamp.ToString(), permission, lib.Name, lib.Owner });                    
                 }
+
                 Console.WriteLine(MiscUtils.PadElementsInLines(lines, 2));
-            } catch (SeafException ex)
+            }
+            catch(AggregateException ex)
+            {
+                throw ex.InnerException;
+            }
+            catch (SeafException ex)
             {
                 Console.WriteLine("Failed");
                 Console.WriteLine("Request failed: " + ex.Message);

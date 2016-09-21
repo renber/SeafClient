@@ -378,18 +378,26 @@ namespace SeafClient
 
         /// <summary>
         /// Uploads a single file
-        /// </summary>
-        /// <param name="uploadLink"></param>
-        /// <param name="targetFilename"></param>
-        /// <param name="fileContent"></param>
-        /// <returns></returns>
+        /// Does not replace already existing files, instead file will be renamed (e.g. test(1).txt if test.txt already exists)
+        /// Use UpdateSingle to replace an already existing file
+        /// </summary>                
         public async Task<bool> UploadSingle(SeafLibrary library, string targetDirectory, string targetFilename, Stream fileContent, Action<float> progressCallback)
         {
-            // to upload files we need to get a uplaod link first
-            GetUploadLinkRequest req = new GetUploadLinkRequest(AuthToken, library.Id);
+            // to upload files we need to get an upload link first            
+            var req = new GetUploadLinkRequest(AuthToken, library.Id);
+            string uploadLink = await webConnection.SendRequestAsync(ServerUri, req);
+            
+            UploadRequest upReq = new UploadRequest(AuthToken, uploadLink, targetDirectory, targetFilename, fileContent, progressCallback);
+            return await webConnection.SendRequestAsync(ServerUri, upReq);
+        }
+
+        public async Task<bool> UpdateSingle(SeafLibrary library, string targetDirectory, string targetFilename, Stream fileContent, Action<float> progressCallback)
+        {
+            // to update files we need to get an update link first            
+            var req = new GetUpdateLinkRequest(AuthToken, library.Id, targetDirectory);
             string uploadLink = await webConnection.SendRequestAsync(ServerUri, req);
 
-            UploadRequest upReq = new UploadRequest(AuthToken, uploadLink, targetDirectory, targetFilename, fileContent, progressCallback);
+            UpdateRequest upReq = new UpdateRequest(AuthToken, uploadLink, targetDirectory, targetFilename, fileContent, progressCallback);
             return await webConnection.SendRequestAsync(ServerUri, upReq);
         }
 

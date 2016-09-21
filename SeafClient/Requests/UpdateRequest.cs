@@ -1,21 +1,22 @@
 ﻿using SeafClient.Utils;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Reflection;
+using System.Net.Http.Headers;
+using System.Diagnostics;
+using SeafClient.Types;
 
 namespace SeafClient.Requests
 {
     /// <summary>
-    /// Request used to upload files    
+    /// Request to update an already existing file using a previously rterieved update link
     /// </summary>
-    public class UploadRequest : SessionRequest<bool>
+    public class UpdateRequest : SessionRequest<bool>
     {
         Action<float> UploadProgress;
 
@@ -23,13 +24,13 @@ namespace SeafClient.Requests
 
         public string TargetDirectory { get; set; }
 
-        List<UploadFileInfo> files = new List<UploadFileInfo>();
+        UploadFileInfo file = null;
 
-        public List<UploadFileInfo> Files
+        public UploadFileInfo File
         {
             get
             {
-                return files;
+                return file;
             }
         }
 
@@ -51,7 +52,7 @@ namespace SeafClient.Requests
         /// <param name="filename"></param>
         /// <param name="fileContent"></param>
         /// <param name="progressCallback"></param>
-        public UploadRequest(string authToken, string uploadUri, string targetDirectory, string filename, Stream fileContent, Action<float> progressCallback)
+        public UpdateRequest(string authToken, string uploadUri, string targetDirectory, string filename, Stream fileContent, Action<float> progressCallback)
             : this(authToken, uploadUri, targetDirectory, progressCallback, new UploadFileInfo(filename, fileContent))
         {
             // --
@@ -65,14 +66,14 @@ namespace SeafClient.Requests
         /// <param name="filename"></param>
         /// <param name="fileContent"></param>
         /// <param name="progressCallback"></param>
-        public UploadRequest(string authToken, string uploadUri, string targetDirectory, Action<float> progressCallback, params UploadFileInfo[] uploadFiles)
+        public UpdateRequest(string authToken, string uploadUri, string targetDirectory, Action<float> progressCallback, UploadFileInfo updateFile)
             : base(authToken)
         {
             UploadUri = uploadUri;
             UploadProgress = progressCallback;
             TargetDirectory = targetDirectory;
 
-            files.AddRange(uploadFiles);
+            file = updateFile;
         }
 
         public override async Task<bool> ParseResponseAsync(HttpResponseMessage msg)
@@ -81,44 +82,54 @@ namespace SeafClient.Requests
             return !String.IsNullOrEmpty(content);
         }
 
+        public override SeafError GetSeafError(System.Net.Http.HttpResponseMessage msg)
+        {
+            switch (msg.StatusCode)
+            {
+                case (System.Net.HttpStatusCode)440:
+                    return new SeafError(msg.StatusCode, SeafErrorCode.FileNotFound);
+                default:
+                    return base.GetSeafError(msg);
+            }
+        }
+
         public override HttpRequestMessage GetCustomizedRequest(Uri serverUri)
         {
             string boundary = "Upload---------" + Guid.NewGuid().ToString();
 
             var request = new HttpRequestMessage(HttpMethod.Post, UploadUri);
 
+            // add aditional headers
             foreach (var hi in GetAdditionalHeaders())
                 request.Headers.Add(hi.Key, hi.Value);
 
             var content = new MultipartFormDataContent(boundary);
 
-            // Add files to upload to the request
-            foreach (var f in Files)
+            // Add file to upload to the request                
+            var fileContent = new ProgressableStreamContent(File.FileContent, (p) =>
             {
-                //var fileContent = new StreamContent(f.FileContent);
-                var fileContent = new ProgressableStreamContent(f.FileContent, (p) =>
-                {
-                    if (UploadProgress != null)
-                        UploadProgress(p);
-                });
-                fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                fileContent.Headers.TryAddWithoutValidation("Content-Disposition", String.Format("form-data; name=\"file\"; filename=\"{0}\"", f.Filename));
+                if (UploadProgress != null)
+                    UploadProgress(p);
+            });
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+            fileContent.Headers.TryAddWithoutValidation("Content-Disposition", String.Format("form-data; name=\"file\"; filename=\"{0}\"", File.Filename));
 
-                content.Add(fileContent);
-            }
+            content.Add(fileContent);
 
             // the parent dir to upload the file to
             string tDir = TargetDirectory;
             if (!tDir.StartsWith("/"))
                 tDir = "/" + tDir;
+            if (!tDir.EndsWith("/"))
+                tDir = tDir + "/";
 
-            var dirContent = new StringContent(tDir, Encoding.UTF8);
+            var dirContent = new StringContent(tDir + File.Filename, Encoding.UTF8);
             dirContent.Headers.ContentType = null;
-            dirContent.Headers.TryAddWithoutValidation("Content-Disposition", @"form-data; name=""parent_dir""");
+            dirContent.Headers.TryAddWithoutValidation("Content-Disposition", @"form-data; name=""target_file""");
             content.Add(dirContent);
 
             // transmit the content length, for this we use the private method TryComputeLength() called by reflection
-            long conLen = 0;                        
+            long conLen = 0;
             var func = typeof(MultipartContent).GetTypeInfo().GetDeclaredMethod("TryComputeLength");
 
             object[] args = new object[] { 0L };
@@ -143,21 +154,6 @@ namespace SeafClient.Requests
             request.Content = content;
 
             return request;
-        }
-    }
-
-    /// <summary>
-    /// Information about a file which shall be uploaded
-    /// </summary>
-    public class UploadFileInfo
-    {
-        public string Filename { get; set; }
-        public Stream FileContent { get; set; }
-
-        public UploadFileInfo(string filename, Stream content)
-        {
-            Filename = filename;
-            FileContent = content;
         }
     }
 }
