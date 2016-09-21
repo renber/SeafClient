@@ -79,5 +79,6 @@ See the [official Seafile Web API documentation](http://manual.seafile.com/devel
 * Get Thumbnail Image
 * Get Download Link
 * Get Upload Link / Upload file
+* Get Upload link / Update file
 * Starred files (list / star / unstar)
 * Decrypt an encrypted library (allowing to download files from the encrypted library)
