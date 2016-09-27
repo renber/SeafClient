@@ -27,7 +27,7 @@ async Task Demo()
         SeafSession session = await SeafSession.Establish(serverUri, username, password);
         
         // connection was successful
-        // btw: the password array is now empty (all elements are now char 0)
+        // The password array has been overwritten with zeroes as soon as the authentication request was sent
         // now retrieve some information about the account
         var accountInfo = await session.CheckAccountInfo();
         Debug.WriteLine(String.Format("Nickname: {0}\nUsed Storage: {1:d} Bytes\nQuota: {2}",
@@ -70,6 +70,9 @@ See the [official Seafile Web API documentation](http://manual.seafile.com/devel
 * Get Server Info
 * Check Account Info
 * Get User Avatar
+* Get Default Library
+* Get Library Info
+* Create Library (unencrypted and encrypted)
 * List Libraries / List Shared Libraries
 * List Directory Entries
 * Create Directory
@@ -79,6 +82,6 @@ See the [official Seafile Web API documentation](http://manual.seafile.com/devel
 * Get Thumbnail Image
 * Get Download Link
 * Get Upload Link / Upload file
-* Get Upload link / Update file
+* Get Update link / Update file
 * Starred files (list / star / unstar)
 * Decrypt an encrypted library (allowing to download files from the encrypted library)
