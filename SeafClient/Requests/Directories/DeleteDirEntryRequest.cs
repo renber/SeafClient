@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using SeafClient.Types;
 using System.Net.Http;
 
-namespace SeafClient.Requests
+namespace SeafClient.Requests.Directories
 {
     /// <summary>
     /// Request to delete a directory or file in a library

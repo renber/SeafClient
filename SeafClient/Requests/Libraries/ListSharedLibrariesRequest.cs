@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using SeafClient.Converters;
 
-namespace SeafClient.Requests
+namespace SeafClient.Requests.Libraries
 {
     public class ListSharedLibrariesRequest : SessionRequest<IList<SeafSharedLibrary>>
     {

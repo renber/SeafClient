@@ -29,7 +29,7 @@ namespace SeafClient.Types
         /// Time of the last modification of this entry
         /// (as UNIX timestamp)
         [JsonProperty("mtime"), JsonConverter(typeof(SeafTimestampConverter))]        
-        public virtual DateTime Timestamp { get; set; }
+        public virtual DateTime? Timestamp { get; set; }
 
         [JsonProperty("desc")]
         public virtual string Description { get; set; }

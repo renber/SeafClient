@@ -3,17 +3,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 
-namespace SeafClient.Requests
+namespace SeafClient.Requests.Directories
 {
-    public class RenameDirectoryRequest : SessionRequest<bool>
+    public class CreateDirectoryRequest : SessionRequest<bool>
     {
         public string LibraryId { get; set; }
 
         public string Path { get; set; }
-
-        public String NewDirectoryName { get; set; }
 
         public override string CommandUri
         {
@@ -25,21 +24,27 @@ namespace SeafClient.Requests
             get { return HttpAccessMethod.Post; }
         }
 
+        public CreateDirectoryRequest(string authToken, string libraryId, string path)
+            : base(authToken)
+        {
+            LibraryId = libraryId;
+            Path = path;
+
+            if (!Path.StartsWith("/"))
+                Path = "/" + Path;
+        }
+
         public override IEnumerable<KeyValuePair<string, string>> GetPostParameters()
         {
             foreach (var p in base.GetPostParameters())
                 yield return p;
 
-            yield return new KeyValuePair<string, string>("operation", "rename");
-            yield return new KeyValuePair<string, string>("newname", NewDirectoryName);
+            yield return new KeyValuePair<string, string>("operation", "mkdir");
         }
 
-        public RenameDirectoryRequest(string authToken, string libraryId, string path, string newDirectoryName)
-            : base(authToken)
+        public override bool WasSuccessful(System.Net.Http.HttpResponseMessage msg)
         {
-            LibraryId = libraryId;
-            Path = path;
-            NewDirectoryName = newDirectoryName;
+            return msg.StatusCode == HttpStatusCode.Created;
         }
 
         public override async System.Threading.Tasks.Task<bool> ParseResponseAsync(System.Net.Http.HttpResponseMessage msg)
@@ -48,13 +53,15 @@ namespace SeafClient.Requests
             return content == "\"success\"";
         }
 
-        public override SeafError GetSeafError(System.Net.Http.HttpResponseMessage msg)
+        public override SeafError GetSeafError(HttpResponseMessage msg)
         {
-            if (msg.StatusCode == HttpStatusCode.Forbidden)
+            switch (msg.StatusCode)
             {
-                return new SeafError(msg.StatusCode, SeafErrorCode.NotEnoughPermissions);                
-            } else
-                return base.GetSeafError(msg);
+                case HttpStatusCode.BadRequest:
+                    return new SeafError(msg.StatusCode, SeafErrorCode.PathDoesNotExist);                    
+                default:
+                    return base.GetSeafError(msg);
+            }            
         }
     }
 }

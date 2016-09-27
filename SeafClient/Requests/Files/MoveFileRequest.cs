@@ -5,7 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 
-namespace SeafClient.Requests
+namespace SeafClient.Requests.Files
 {
     public class MoveFileRequest : SessionRequest<bool>
     {

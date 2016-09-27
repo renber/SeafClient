@@ -60,32 +60,36 @@
     <Compile Include="Converters\SeafTimestampConverter.cs" />
     <Compile Include="ISeafRequest.cs" />
     <Compile Include="ISeafWebConnection.cs" />
-    <Compile Include="Requests\AccountInfoRequest.cs" />
+    <Compile Include="Requests\Files\GetFileDetailRequest.cs" />
+    <Compile Include="Requests\Libraries\CreateLibraryRequest.cs" />
+    <Compile Include="Requests\Libraries\GetDefaultLibraryRequest.cs" />
+    <Compile Include="Requests\Libraries\GetLibraryInfoRequest.cs" />
+    <Compile Include="Requests\UserAccountInfo\AccountInfoRequest.cs" />
     <Compile Include="Requests\AuthRequest.cs" />
     <Compile Include="Exceptions\SeafException.cs" />
-    <Compile Include="Requests\CreateDirectoryRequest.cs" />
-    <Compile Include="Requests\DecryptLibraryRequest.cs" />
-    <Compile Include="Requests\DeleteDirEntryRequest.cs" />
-    <Compile Include="Requests\GetFileDownloadLinkRequest.cs" />
+    <Compile Include="Requests\Directories\CreateDirectoryRequest.cs" />
+    <Compile Include="Requests\Libraries\DecryptLibraryRequest.cs" />
+    <Compile Include="Requests\Directories\DeleteDirEntryRequest.cs" />
+    <Compile Include="Requests\Files\GetFileDownloadLinkRequest.cs" />
     <Compile Include="Requests\GetServerInfoRequest.cs" />
-    <Compile Include="Requests\GetThumbnailImageRequest.cs" />
-    <Compile Include="Requests\GetUpdateLinkRequest.cs" />
-    <Compile Include="Requests\GetUploadLinkRequest.cs" />
-    <Compile Include="Requests\ListDirectoryEntriesRequest.cs" />
-    <Compile Include="Requests\ListLibrariesRequest.cs" />
-    <Compile Include="Requests\ListSharedLibrariesRequest.cs" />
-    <Compile Include="Requests\ListStarredFilesRequest.cs" />
-    <Compile Include="Requests\CopyFileRequest.cs" />
+    <Compile Include="Requests\Files\GetThumbnailImageRequest.cs" />
+    <Compile Include="Requests\Files\GetUpdateLinkRequest.cs" />
+    <Compile Include="Requests\Files\GetUploadLinkRequest.cs" />
+    <Compile Include="Requests\Directories\ListDirectoryEntriesRequest.cs" />
+    <Compile Include="Requests\Libraries\ListLibrariesRequest.cs" />
+    <Compile Include="Requests\Libraries\ListSharedLibrariesRequest.cs" />
+    <Compile Include="Requests\StarredFiles\ListStarredFilesRequest.cs" />
+    <Compile Include="Requests\Files\CopyFileRequest.cs" />
     <Compile Include="Requests\PingRequest.cs" />
-    <Compile Include="Requests\RenameDirectoryRequest.cs" />
-    <Compile Include="Requests\MoveFileRequest.cs" />
-    <Compile Include="Requests\RenameFileRequest.cs" />
+    <Compile Include="Requests\Directories\RenameDirectoryRequest.cs" />
+    <Compile Include="Requests\Files\MoveFileRequest.cs" />
+    <Compile Include="Requests\Files\RenameFileRequest.cs" />
     <Compile Include="Requests\SessionRequest.cs" />
-    <Compile Include="Requests\StarFileRequest.cs" />
-    <Compile Include="Requests\UnstarFileRequest.cs" />
-    <Compile Include="Requests\UpdateRequest.cs" />
-    <Compile Include="Requests\UploadRequest.cs" />
-    <Compile Include="Requests\UserAvatarRequest.cs" />
+    <Compile Include="Requests\StarredFiles\StarFileRequest.cs" />
+    <Compile Include="Requests\StarredFiles\UnstarFileRequest.cs" />
+    <Compile Include="Requests\Files\UpdateFileRequest.cs" />
+    <Compile Include="Requests\Files\UploadFilesRequest.cs" />
+    <Compile Include="Requests\UserAccountInfo\UserAvatarRequest.cs" />
     <Compile Include="SeafConnectionFactory.cs" />
     <Compile Include="Types\SeafDirEntry.cs" />
     <Compile Include="Types\SeafLibrary.cs" />
@@ -123,6 +127,7 @@
       <Private>True</Private>
     </Reference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -26,7 +26,7 @@ namespace SeafClient.Types
         /// (as UNIX timestamp)
         /// </summary>
         [JsonProperty("mtime"), JsonConverter(typeof(SeafTimestampConverter))]
-        public virtual DateTime Timestamp { get; set; }
+        public virtual DateTime? Timestamp { get; set; }
 
         /// <summary>
         /// File size (only if Type is File)
@@ -34,10 +34,28 @@ namespace SeafClient.Types
         public virtual long Size { get; set; }        
 
         /// <summary>
-        /// The path of this item in its library
+        /// The full path of this item in its library
+        /// (including the filename if the entry represents a file)
         /// </summary>        
         [JsonIgnore]
         public virtual string Path { get; set; }
+
+        /// <summary>
+        /// Return the directory of this entry
+        /// (if the entry is a directory this is the same as Path,
+        ///  if it is a file then the directory cotnaining the file is returned)
+        /// </summary>
+        [JsonIgnore]
+        public string Directory
+        {
+            get
+            {
+                if (Type == DirEntryType.Dir)
+                    return Path;
+
+                return System.IO.Path.GetDirectoryName(Path).Replace("\\", "/");
+            }
+        }
     }
 
     public enum DirEntryType

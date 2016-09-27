@@ -7,7 +7,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 
-namespace SeafClient.Requests
+namespace SeafClient.Requests.Files
 {
     /// <summary>
     /// Return a download link for the given file

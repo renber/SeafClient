@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SeafClient.Requests;
+using SeafClient.Requests.StarredFiles;
 using SeafClient.Types;
 using System;
 using System.Collections.Generic;

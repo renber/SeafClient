@@ -10,12 +10,12 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SeafClient.Requests
+namespace SeafClient.Requests.Files
 {
     /// <summary>
     /// Request used to upload files    
     /// </summary>
-    public class UploadRequest : SessionRequest<bool>
+    public class UploadFilesRequest : SessionRequest<bool>
     {
         Action<float> UploadProgress;
 
@@ -51,7 +51,7 @@ namespace SeafClient.Requests
         /// <param name="filename"></param>
         /// <param name="fileContent"></param>
         /// <param name="progressCallback"></param>
-        public UploadRequest(string authToken, string uploadUri, string targetDirectory, string filename, Stream fileContent, Action<float> progressCallback)
+        public UploadFilesRequest(string authToken, string uploadUri, string targetDirectory, string filename, Stream fileContent, Action<float> progressCallback)
             : this(authToken, uploadUri, targetDirectory, progressCallback, new UploadFileInfo(filename, fileContent))
         {
             // --
@@ -65,7 +65,7 @@ namespace SeafClient.Requests
         /// <param name="filename"></param>
         /// <param name="fileContent"></param>
         /// <param name="progressCallback"></param>
-        public UploadRequest(string authToken, string uploadUri, string targetDirectory, Action<float> progressCallback, params UploadFileInfo[] uploadFiles)
+        public UploadFilesRequest(string authToken, string uploadUri, string targetDirectory, Action<float> progressCallback, params UploadFileInfo[] uploadFiles)
             : base(authToken)
         {
             UploadUri = uploadUri;

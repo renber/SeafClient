@@ -26,6 +26,6 @@ namespace SeafClient.Types
         public override string Owner { get; set; }
 
         [JsonProperty("last_modified"), JsonConverter(typeof(SeafTimestampConverter))]
-        public override DateTime Timestamp { get; set; }
+        public override DateTime? Timestamp { get; set; }
     }
 }

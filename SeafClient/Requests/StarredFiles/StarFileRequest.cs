@@ -6,7 +6,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SeafClient.Requests
+namespace SeafClient.Requests.StarredFiles
 {
     /// <summary>
     /// Request which stars a file (mark it as favorite)

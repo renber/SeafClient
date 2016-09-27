@@ -9,7 +9,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SeafClient.Requests
+namespace SeafClient.Requests.StarredFiles
 {
     /// <summary>
     /// Request to get a list of all starred files of the session owner

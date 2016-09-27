@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SeafClient.Requests
+namespace SeafClient.Requests.Files
 {
     /// <summary>
     /// Request a link which can be used to upload files with

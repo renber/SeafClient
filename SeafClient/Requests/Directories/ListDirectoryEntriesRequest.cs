@@ -6,7 +6,7 @@ using System.Net;
 using System.Text;
 using System.Net.Http;
 
-namespace SeafClient.Requests
+namespace SeafClient.Requests.Directories
 {
     /// <summary>
     /// Request to receive the contents of a directory

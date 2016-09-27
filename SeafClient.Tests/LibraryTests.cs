@@ -6,12 +6,58 @@ using System.Net;
 using SeafClient.Types;
 using System.Collections.Generic;
 using System.Globalization;
+using SeafClient.Requests.Libraries;
 
 namespace SeafClient.Tests
 {
     [TestClass]
     public class LibraryTests : SeafTestClassBase
     {
+        [TestMethod]
+        public void Test_GetDefaultLibrary_Success()
+        {
+            GetDefaultLibraryRequest req = new GetDefaultLibraryRequest(FakeToken);
+
+            HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.OK);
+            m.Content = new StringContent(
+                @"{
+                   ""repo_id"": ""691b3e24-d05e-43cd-a9f2-6f32bd6b800e"",
+                   ""exists"": true
+                }");
+
+            Assert.IsTrue(req.WasSuccessful(m));
+            SimpleLibraryResult result = ExecuteSync(() => req.ParseResponseAsync(m));
+            Assert.IsTrue(result.Exists);
+            Assert.AreEqual("691b3e24-d05e-43cd-a9f2-6f32bd6b800e", result.LibraryId);
+        }
+
+        [TestMethod]
+        public void Test_GetLibraryInfo_Success()
+        {
+            GetLibraryInfoRequest req = new GetLibraryInfoRequest(FakeToken, FakeRepoId);
+
+            HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.OK);
+            m.Content = new StringContent(
+                @"{
+                    ""encrypted"": false,
+                    ""password_need"": null,
+                    ""mtime"": null,
+                    ""owner"": ""self"",
+                    ""id"": ""632ab8a8-ecf9-4435-93bf-f495d5bfe975"",
+                    ""size"": 1356155,
+                    ""name"": ""org"",
+                    ""root"": ""b5227040de360dd22c5717f9563628fe5510cbce"",
+                    ""desc"": ""org file"",
+                    ""type"": ""repo""
+                }");
+
+            Assert.IsTrue(req.WasSuccessful(m));
+            SeafLibrary lib = ExecuteSync(() => req.ParseResponseAsync(m));
+
+            Assert.AreEqual("632ab8a8-ecf9-4435-93bf-f495d5bfe975", lib.Id);
+            Assert.AreEqual(null, lib.Timestamp);
+        }
+
         [TestMethod]
         public void Test_ListLibraries_HttpRequest()
         {

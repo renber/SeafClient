@@ -7,6 +7,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using SeafClient.Requests.Libraries;
+using SeafClient.Requests.UserAccountInfo;
+using SeafClient.Requests.Directories;
+using SeafClient.Requests.Files;
+using SeafClient.Requests.StarredFiles;
+using SeafClient.Utils;
 
 namespace SeafClient
 {
@@ -32,7 +38,7 @@ namespace SeafClient
         /// </summary>
         /// <param name="serverUrl">The server url to connect to (including protocol (http or https) and port)</param>
         /// <param name="username">The username to login with</param>
-        /// <param name="pwd">The password for the given user</param>
+        /// <param name="pwd">The password for the given user (will be overwritten with zeros as soon as the authentication request has been sent)</param>
         public static async Task<SeafSession> Establish(Uri serverUri, string username, char[] pwd)
         {
             return await Establish(SeafConnectionFactory.GetDefaultConnection(), serverUri, username, pwd);
@@ -43,7 +49,7 @@ namespace SeafClient
         /// </summary>
         /// <param name="serverUrl">The server url to connect to (including protocol (http or https) and port)</param>
         /// <param name="username">The username to login with</param>
-        /// <param name="pwd">The password for the given user</param>
+        /// <param name="pwd">The password for the given user (will be overwritten with zeros as soon as the authentication request has been sent)</param>
         public static async Task<SeafSession> Establish(ISeafWebConnection seafWebConnection, Uri serverUri, string username, char[] pwd)
         {
             if (seafWebConnection == null)
@@ -199,13 +205,13 @@ namespace SeafClient
         public async Task<AccountInfo> CheckAccountInfo()
         {
             AccountInfoRequest req = new AccountInfoRequest(AuthToken);
-
             return await webConnection.SendRequestAsync<AccountInfo>(ServerUri, req);
         }
 
         /// <summary>
         /// Retrieve the avatar of the current user
         /// </summary>        
+        /// <param name="size">Size of the requested image in pixels (width=height)</param>
         public async Task<UserAvatar> GetUserAvatar(int size)
         {
             return await GetUserAvatar(Username, size);
@@ -214,9 +220,35 @@ namespace SeafClient
         /// <summary>
         /// Retrieve the avatar of the given user
         /// </summary>        
+        /// <param name="username">The username to retrieve the avatar for</param>
+        /// <param name="size">Size of the requested image in pixels (width=height)</param>
         public async Task<UserAvatar> GetUserAvatar(string username, int size)
         {
             UserAvatarRequest req = new UserAvatarRequest(AuthToken, username, size);
+            return await webConnection.SendRequestAsync(ServerUri, req);
+        }
+
+        /// <summary>
+        /// Return the current user's default library        
+        /// </summary>
+        /// <returns>The user's default library or null if no default library exists</returns>
+        public async Task<SeafLibrary> GetDefaultLibrary()
+        {
+            GetDefaultLibraryRequest req = new GetDefaultLibraryRequest(AuthToken);
+            var res = await webConnection.SendRequestAsync(ServerUri, req);
+
+            if (!res.Exists)
+                return null;
+
+            return await GetLibraryInfo(res.LibraryId);
+        }
+
+        /// <summary>
+        /// Retrieve information for the library with the given id
+        /// </summary>        
+        public async Task<SeafLibrary> GetLibraryInfo(string libraryId)
+        {
+            GetLibraryInfoRequest req = new GetLibraryInfoRequest(AuthToken, libraryId);
             return await webConnection.SendRequestAsync(ServerUri, req);
         }
 
@@ -232,12 +264,34 @@ namespace SeafClient
 
         /// <summary>
         /// Return all shared libraries of the current user
-        /// </summary>
-        /// <returns></returns>
+        /// </summary>        
         public async Task<IList<SeafSharedLibrary>> ListSharedLibraries()
         {
             ListSharedLibrariesRequest req = new ListSharedLibrariesRequest(AuthToken);
             return await webConnection.SendRequestAsync(ServerUri, req);
+        }
+
+        /// <summary>
+        /// Creates a new unencrypted library with the given name and description
+        /// </summary>        
+        /// <returns></returns>
+        public async Task<SeafLibrary> CreateLibrary(string name, string description = "")
+        {
+            CreateLibraryRequest req = new CreateLibraryRequest(AuthToken, name, description);
+            var result = await webConnection.SendRequestAsync(ServerUri, req);
+            return await GetLibraryInfo(result.Id);
+        }
+
+        /// <summary>
+        /// Creates a new encrypted library with the given name, description and password
+        /// </summary>    
+        /// <param name="password">The password to encrypt the library with. Will be overwritten with zeroes as soon as the request has been sent</param>
+        /// <returns></returns>
+        public async Task<SeafLibrary> CreateEncryptedLibrary(string name, string description, char[] password)
+        {
+            CreateLibraryRequest req = new CreateLibraryRequest(AuthToken, name, description, password);
+            var result = await webConnection.SendRequestAsync(ServerUri, req);
+            return await GetLibraryInfo(result.Id);
         }
 
         /// <summary>
@@ -249,167 +303,599 @@ namespace SeafClient
         }
 
         /// <summary>
-        /// List the content of the given directory of the given linrary
+        /// List the content of the given directory
+        /// </summary>        
+        public async Task<IList<SeafDirEntry>> ListDirectory(SeafDirEntry dirEntry)
+        {
+            dirEntry.ThrowOnNull(nameof(dirEntry));
+
+            if (dirEntry.Type != DirEntryType.Dir)
+                throw new ArgumentException("The given directory entry is not a directory.");
+
+            return await ListDirectory(dirEntry.LibraryId, dirEntry.Path);
+        }
+
+        /// <summary>
+        /// List the content of the given directory of the given library
         /// </summary>
-        /// <param name="library"></param>
-        /// <param name="directory"></param>
-        /// <returns></returns>
         public async Task<IList<SeafDirEntry>> ListDirectory(SeafLibrary library, string directory)
         {
+            library.ThrowOnNull(nameof(library));            
+
+            return await ListDirectory(library.Id, directory);
+        }
+
+        /// <summary>
+        /// List the content of the given directory of the given library
+        /// </summary>
+        public async Task<IList<SeafDirEntry>> ListDirectory(String libraryId, string directory)
+        {
+            libraryId.ThrowOnNull(nameof(libraryId));
+            directory.ThrowOnNull(nameof(directory));
+
             if (!directory.EndsWith("/"))
                 directory += "/";
 
-            ListDirectoryEntriesRequest req = new ListDirectoryEntriesRequest(AuthToken, library.Id, directory);
-            var dLst = await webConnection.SendRequestAsync(ServerUri, req);            
+            ListDirectoryEntriesRequest req = new ListDirectoryEntriesRequest(AuthToken, libraryId, directory);
+            var dLst = await webConnection.SendRequestAsync(ServerUri, req);
             return dLst;
         }
 
         /// <summary>
-        /// Create the given directory in the given library
+        /// Create a new directory in the given library
         /// </summary>
-        /// <param name="library"></param>
-        /// <param name="directory"></param>
-        /// <returns></returns>
-        public async Task<bool> CreateDirectory(SeafLibrary library, string directory)
+        /// <param name="library">Library to create the directory in</param>
+        /// <param name="path">Path of the directory to create</param>
+        /// <returns>A value which indicates if the creation was successful</returns>
+        public async Task<bool> CreateDirectory(SeafLibrary library, string path)
         {
-            CreateDirectoryRequest req = new CreateDirectoryRequest(AuthToken, library.Id, directory);
-            return await webConnection.SendRequestAsync(ServerUri, req); 
+            library.ThrowOnNull(nameof(library));
+
+            return await CreateDirectory(library.Id, path);
+        }
+
+        /// <summary>
+        /// Create a new directory in the given library
+        /// </summary>
+        /// <param name="libraryId">The id of the library to create the directory in</param>
+        /// <param name="path">Path of the directory to create</param>
+        /// <returns>A value which indicates if the creation was successful</returns>
+        public async Task<bool> CreateDirectory(String libraryId, string path)
+        {
+            libraryId.ThrowOnNull(nameof(libraryId));
+            path.ThrowOnNull(nameof(path));
+
+            CreateDirectoryRequest req = new CreateDirectoryRequest(AuthToken, libraryId, path);
+            return await webConnection.SendRequestAsync(ServerUri, req);
         }
 
         /// <summary>
         /// Rename the given directory
         /// </summary>
-        /// <param name="library"></param>
-        /// <param name="directoryPath"></param>
-        /// <param name="newName"></param>
-        /// <returns></returns>
+        /// <param name="dirEntry">The directory entry of the directory to rename</param>       
+        /// <param name="newName">The new name of the directory</param>
+        /// <returns>A value which indicates if the action was successful</returns>
+        public async Task<bool> RenameDirectory(SeafDirEntry dirEntry, string newName)
+        {
+            dirEntry.ThrowOnNull(nameof(dirEntry));            
+
+            if (dirEntry.Type != DirEntryType.Dir)
+                throw new ArgumentException("The given directory entry is not a directory.");
+
+            return await RenameDirectory(dirEntry.LibraryId, dirEntry.Path, newName);
+        }
+
+        /// <summary>
+        /// Rename the given directory
+        /// </summary>
+        /// <param name="library">The library the directory is in</param>
+        /// <param name="directoryPath">The current path of the directory</param>
+        /// <param name="newName">The new name of the directory</param>
+        /// <returns>A value which indicates if the action was successful</returns>
         public async Task<bool> RenameDirectory(SeafLibrary library, string directoryPath, string newName)
         {
-            RenameDirectoryRequest req = new RenameDirectoryRequest(AuthToken, library.Id, directoryPath, newName);
+            library.ThrowOnNull(nameof(library));            
+
+            return await RenameDirectory(library.Id, directoryPath, newName);
+        }
+
+        /// <summary>
+        /// Rename the given directory
+        /// </summary>
+        /// <param name="libraryId">The Id of the library the directory is in</param>
+        /// <param name="directoryPath">The current path of the directory</param>
+        /// <param name="newName">The new name of the directory</param>
+        /// <returns>A value which indicates if the action was successful</returns>
+        public async Task<bool> RenameDirectory(String libraryId, string directoryPath, string newName)
+        {
+            libraryId.ThrowOnNull(nameof(libraryId));
+            directoryPath.ThrowOnNull(nameof(directoryPath));
+            newName.ThrowOnNull(nameof(newName));
+
+            RenameDirectoryRequest req = new RenameDirectoryRequest(AuthToken, libraryId, directoryPath, newName);
             return await webConnection.SendRequestAsync(ServerUri, req);
+        }
+
+        /// <summary>
+        /// Delete the given directory
+        /// </summary>
+        /// <param name="dirEntry">The directory to delete</param>        
+        /// <returns>A value which indicates if the action was successful</returns>
+        public async Task<bool> DeleteDirectory(SeafDirEntry dirEntry)
+        {
+            dirEntry.ThrowOnNull(nameof(dirEntry));
+
+            if (dirEntry.Type != DirEntryType.Dir)
+                throw new ArgumentException("The given directory entry is not a directory.");
+
+            return await DeleteDirectory(dirEntry.LibraryId, dirEntry.Path);
         }
 
         /// <summary>
         /// Delete the given directory in the given library
         /// </summary>
-        /// <param name="library"></param>
-        /// <param name="directory"></param>
-        /// <returns></returns>
-        public async Task<bool> DeleteDirectory(SeafLibrary library, string directory)
+        /// <param name="library">The library the directory is in</param>
+        /// <param name="directoryPath">The path of the directory to delete</param>
+        /// <returns>A value which indicates if the action was successful</returns>
+        public async Task<bool> DeleteDirectory(SeafLibrary library, string directoryPath)
         {
-            return await DeleteFile(library, directory);   
+            library.ThrowOnNull(nameof(library));
+
+            return await DeleteDirectory(library.Id, directoryPath);   
+        }
+
+        /// <summary>
+        /// Delete the given directory in the given library
+        /// </summary>
+        /// <param name="libraryId">The id of the library the directory is in</param>
+        /// <param name="directoryPath">The path of the directory to delete</param>
+        /// <returns>A value which indicates if the action was successful</returns>
+        public async Task<bool> DeleteDirectory(string libraryId, string directoryPath)
+        {
+            libraryId.ThrowOnNull(nameof(libraryId));
+            directoryPath.ThrowOnNull(nameof(directoryPath));
+
+            return await DeleteFile(libraryId, directoryPath);
+        }
+
+        /// <summary>
+        /// Retrieve information about the given file in the given library
+        /// </summary>
+        /// <param name="library">The library the file belongs to</param>
+        /// <param name="filePath">Path to the file</param>
+        /// <returns>The directory entry of the file</returns>
+        public async Task<SeafDirEntry> GetFileDetail(SeafLibrary library, string filePath)
+        {
+            library.ThrowOnNull(nameof(library));
+
+            return await GetFileDetail(library.Id, filePath);
+        }
+
+        /// <summary>
+        /// Retrieve information about the given file in the given library
+        /// </summary>
+        /// <param name="library">The id of the library the file belongs to</param>
+        /// <param name="filePath">Path to the file</param>
+        /// <returns>The directory entry of the file</returns>
+        public async Task<SeafDirEntry> GetFileDetail(string libraryId, string filePath)
+        {
+            libraryId.ThrowOnNull(nameof(libraryId));
+            filePath.ThrowOnNull(nameof(filePath));
+
+            GetFileDetailRequest req = new GetFileDetailRequest(AuthToken, libraryId, filePath);
+            return await webConnection.SendRequestAsync(ServerUri, req);
         }
 
         /// <summary>
         /// Rename the given file
         /// </summary>
-        /// <param name="library"></param>
-        /// <param name="directoryPath"></param>
-        /// <param name="newName"></param>
-        /// <returns></returns>
+        /// <param name="dirEntry">The directory entry of the file</param>
+        /// <param name="newName">The new name of the file</param>
+        /// <returns>A value which indicates if the action was successful</returns>
+        public async Task<bool> RenameFile(SeafDirEntry dirEntry, string newName)
+        {
+            dirEntry.ThrowOnNull(nameof(dirEntry));
+
+            if (dirEntry.Type != DirEntryType.File)
+                throw new ArgumentException("The given directory entry is not a file.");
+
+            return await RenameFile(dirEntry.LibraryId, dirEntry.Path, newName);
+        }
+
+        /// <summary>
+        /// Rename the given file
+        /// </summary>
+        /// <param name="library">The library the file is in</param>
+        /// <param name="filePath">The full path of the file</param>
+        /// <param name="newName">The new name of the file</param>
+        /// <returns>A value which indicates if the action was successful</returns>
         public async Task<bool> RenameFile(SeafLibrary library, string filePath, string newName)
         {
-            RenameFileRequest req = new RenameFileRequest(AuthToken, library.Id, filePath, newName);
+            library.ThrowOnNull(nameof(library));
+
+            return await RenameFile(library.Id, filePath, newName);
+        }
+
+        /// <summary>
+        /// Rename the given file
+        /// </summary>
+        /// <param name="libraryId">The id of the library the file is in</param>
+        /// <param name="filePath">The full path of the file</param>
+        /// <param name="newName">The new name of the file</param>
+        /// <returns>A value which indicates if the action was successful</returns>
+        public async Task<bool> RenameFile(String libraryId, string filePath, string newName)
+        {
+            libraryId.ThrowOnNull(nameof(libraryId));
+            filePath.ThrowOnNull(nameof(filePath));
+            newName.ThrowOnNull(nameof(newName));
+
+            RenameFileRequest req = new RenameFileRequest(AuthToken, libraryId, filePath, newName);
             return await webConnection.SendRequestAsync(ServerUri, req);
         }
 
         /// <summary>
         /// Move the given file
         /// </summary>
-        /// <param name="library"></param>
-        /// <param name="directoryPath"></param>
-        /// <param name="newName"></param>
-        /// <returns></returns>
+        /// <param name="dirEntry">The file to move</param>        
+        /// <param name="targetLibrary">The library to move this file to</param>
+        /// <param name="targetDirectory">The directory to move this file to</param>
+        /// <returns>A value which indicates if the action was successful</returns>
+        public async Task<bool> CopyFile(SeafDirEntry dirEntry, SeafLibrary targetLibrary, string targetDirectory)
+        {
+            dirEntry.ThrowOnNull(nameof(dirEntry));
+
+            if (dirEntry.Type != DirEntryType.File)
+                throw new ArgumentException("The given directory entry is not a file.");
+
+            return await CopyFile(dirEntry.LibraryId, dirEntry.Path, targetLibrary.Id, targetDirectory);
+        }
+
+        /// <summary>
+        /// Copy the given file
+        /// </summary>
+        /// <param name="library">The library the file is in</param>
+        /// <param name="filePath">The full path of the file</param>
+        /// <param name="targetLibrary">The library to copy this file to</param>
+        /// <param name="targetDirectory">The directory to copy this file to</param>
+        /// <returns>A value which indicates if the action was successful</returns>
         public async Task<bool> CopyFile(SeafLibrary library, string filePath, SeafLibrary targetLibrary, string targetDirectory)
         {
-            CopyFileRequest req = new CopyFileRequest(AuthToken, library.Id, filePath, targetLibrary.Id, targetDirectory);
+            library.ThrowOnNull(nameof(library));
+            targetLibrary.ThrowOnNull(nameof(targetLibrary));
+
+            return await CopyFile(library.Id, filePath, targetLibrary.Id, targetDirectory);
+        }
+
+        /// <summary>
+        /// Copy the given file
+        /// </summary>
+        /// <param name="libraryId">The id of the library the file is in</param>
+        /// <param name="filePath">The full path of the file</param>
+        /// <param name="targetLibraryId">The id of the library to copy this file to</param>
+        /// <param name="targetDirectory">The directory to copy this file to</param>
+        /// <returns>A value which indicates if the action was successful</returns>
+        public async Task<bool> CopyFile(String libraryId, string filePath, String targetLibraryId, string targetDirectory)
+        {
+            libraryId.ThrowOnNull(nameof(libraryId));
+            filePath.ThrowOnNull(nameof(filePath));
+            targetLibraryId.ThrowOnNull(nameof(targetLibraryId));
+            targetDirectory.ThrowOnNull(nameof(targetDirectory));
+
+            CopyFileRequest req = new CopyFileRequest(AuthToken, libraryId, filePath, targetLibraryId, targetDirectory);
             return await webConnection.SendRequestAsync(ServerUri, req);
         }
 
         /// <summary>
         /// Move the given file
         /// </summary>
-        /// <param name="library"></param>
-        /// <param name="directoryPath"></param>
-        /// <param name="newName"></param>
-        /// <returns></returns>
+        /// <param name="dirEntry">The directory entry of the file to move</param>        
+        /// <param name="targetLibrary">The library to move this file to</param>
+        /// <param name="targetDirectory">The directory to move this file to</param>
+        /// <returns>A value which indicates if the action was successful</returns>
+        public async Task<bool> MoveFile(SeafDirEntry dirEntry, SeafLibrary targetLibrary, string targetDirectory)
+        {
+            dirEntry.ThrowOnNull(nameof(dirEntry));
+
+            if (dirEntry.Type != DirEntryType.File)
+                throw new ArgumentException("The given directory entry is not a file.");
+
+            return await MoveFile(dirEntry.LibraryId, dirEntry.Path, targetLibrary.Id, targetDirectory);
+        }
+
+        /// <summary>
+        /// Move the given file
+        /// </summary>
+        /// <param name="library">The library th file is in</param>
+        /// <param name="filePath">The full path of the file</param>
+        /// <param name="targetLibrary">The library to move this file to</param>
+        /// <param name="targetDirectory">The directory to move this file to</param>
+        /// <returns>A value which indicates if the action was successful</returns>
         public async Task<bool> MoveFile(SeafLibrary library, string filePath, SeafLibrary targetLibrary, string targetDirectory)
         {
-            MoveFileRequest req = new MoveFileRequest(AuthToken, library.Id, filePath, targetLibrary.Id, targetDirectory);
+            library.ThrowOnNull(nameof(library));
+            targetLibrary.ThrowOnNull(nameof(targetLibrary));
+
+            return await MoveFile(library.Id, filePath, targetLibrary.Id, targetDirectory);
+        }
+
+        /// <summary>
+        /// Move the given file
+        /// </summary>
+        /// <param name="libraryId">The id of the library th file is in</param>
+        /// <param name="filePath">The full path of the file</param>
+        /// <param name="targetLibraryId">The id of the library to move this file to</param>
+        /// <param name="targetDirectory">The directory to move this file to</param>
+        /// <returns>A value which indicates if the action was successful</returns>
+        public async Task<bool> MoveFile(String libraryId, string filePath, String targetLibraryId, string targetDirectory)
+        {
+            libraryId.ThrowOnNull(nameof(libraryId));
+            filePath.ThrowOnNull(nameof(filePath));
+            targetLibraryId.ThrowOnNull(nameof(targetLibraryId));
+            targetDirectory.ThrowOnNull(nameof(targetDirectory));
+
+            MoveFileRequest req = new MoveFileRequest(AuthToken, libraryId, filePath, targetLibraryId, targetDirectory);
             return await webConnection.SendRequestAsync(ServerUri, req);
         }
 
         /// <summary>
-        /// Delete the given directory in the given library
+        /// Delete the given file
         /// </summary>
-        /// <param name="library"></param>
-        /// <param name="directory"></param>
-        /// <returns></returns>
+        /// <param name="dirEntry">Directory entry of the file to delete</param>
+        /// <returns>A value which indicates if the deletion was successful</returns>
+        public async Task<bool> DeleteFile(SeafDirEntry dirEntry)
+        {
+            dirEntry.ThrowOnNull(nameof(dirEntry));
+
+            return await DeleteFile(dirEntry.LibraryId, dirEntry.Path);
+        }
+
+        /// <summary>
+        /// Delete the given file in the given library
+        /// </summary>
+        /// <param name="library">The library the file is in</param>
+        /// <param name="filePath">Path of the file</param>
+        /// <returns>A value which indicates if the deletion was successful</returns>
         public async Task<bool> DeleteFile(SeafLibrary library, string filePath)
         {
-            DeleteDirEntryRequest req = new DeleteDirEntryRequest(AuthToken, library.Id, filePath);
+            library.ThrowOnNull(nameof(library));
+
+            return await DeleteFile(library.Id, filePath);
+        }
+
+        /// <summary>
+        /// Delete the given file in the given library
+        /// </summary>
+        /// <param name="libraryId">The id of the library the file is in</param>
+        /// <param name="filePath">Path of the file</param>
+        /// <returns>A value which indicates if the deletion was successful</returns>
+        protected async Task<bool> DeleteFile(String libraryId, string filePath)
+        {
+            libraryId.ThrowOnNull(nameof(libraryId));
+            filePath.ThrowOnNull(nameof(filePath));
+
+            DeleteDirEntryRequest req = new DeleteDirEntryRequest(AuthToken, libraryId, filePath);
             return await webConnection.SendRequestAsync(ServerUri, req); 
         }
 
         /// <summary>
         /// Get a download link for the given file
         /// </summary>
-        /// <param name="library"></param>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        public async Task<string> GetFileDownloadLink(SeafLibrary library, string path)
+        /// <param name="dirEntry">The directory entry for the file to download</param>        
+        /// <returns>The download link which is valid once</returns>
+        public async Task<string> GetFileDownloadLink(SeafDirEntry dirEntry)
         {
-            GetFileDownloadLinkRequest req = new GetFileDownloadLinkRequest(AuthToken, library.Id, path);
-            return await webConnection.SendRequestAsync(ServerUri, req);             
+            dirEntry.ThrowOnNull(nameof(dirEntry));
+
+            if (dirEntry.Type != DirEntryType.File)
+                throw new ArgumentException("The given directory entry is not a file.");
+
+            return await GetFileDownloadLink(dirEntry.LibraryId, dirEntry.Path);
         }
 
         /// <summary>
-        /// Get a thumbnail for the given image
+        /// Get a download link for the given file
         /// </summary>
-        /// <param name="library"></param>
-        /// <param name="path"></param>
-        /// <param name="size"></param>
+        /// <param name="library">The library the file is in</param>
+        /// <param name="path">The path to the file</param>
+        /// <returns>The download link which is valid once</returns>
+        public async Task<string> GetFileDownloadLink(SeafLibrary library, string path)
+        {
+            library.ThrowOnNull(nameof(library));
+
+            return await GetFileDownloadLink(library.Id, path);
+        }
+
+        /// <summary>
+        /// Get a download link for the given file
+        /// </summary>
+        /// <param name="libraryId">The id of the library the file is in</param>
+        /// <param name="path">The path to the file</param>
+        /// <returns>The download link which is valid once</returns>
+        protected async Task<string> GetFileDownloadLink(String libraryId, string path)
+        {
+            libraryId.ThrowOnNull(nameof(libraryId));
+            path.ThrowOnNull(nameof(path));
+
+            GetFileDownloadLinkRequest req = new GetFileDownloadLinkRequest(AuthToken, libraryId, path);
+            return await webConnection.SendRequestAsync(ServerUri, req);
+        }
+
+        /// <summary>
+        /// Get a thumbnail for the given file
+        /// </summary>
+        /// <param name="dirEntry">The directory entry of the file</param>
+        /// <param name="size">The size of the thumbnail (vertical and horizontal pixel count)</param>
+        /// <returns></returns>
+        public async Task<byte[]> GetThumbnailImage(SeafDirEntry dirEntry, int size)
+        {
+            dirEntry.ThrowOnNull(nameof(dirEntry));
+
+            if (dirEntry.Type != DirEntryType.File)
+                throw new ArgumentException("The given directory entry is not a file.");
+
+            return await GetThumbnailImage(dirEntry.LibraryId, dirEntry.Path, size);
+        }
+
+        /// <summary>
+        /// Get a thumbnail for the given file
+        /// </summary>
+        /// <param name="library">The library the file is in</param>
+        /// <param name="path">Path to the file</param>
+        /// <param name="size">The size of the thumbnail (vertical and horizontal pixel count)</param>
         /// <returns></returns>
         public async Task<byte[]> GetThumbnailImage(SeafLibrary library, string path, int size)
         {
-            GetThumbnailImageRequest req = new GetThumbnailImageRequest(AuthToken, library.Id, path, size);
+            library.ThrowOnNull(nameof(library));
+
+            return await GetThumbnailImage(library.Id, path, size);
+        }
+
+        /// <summary>
+        /// Get a thumbnail for the given file
+        /// </summary>
+        /// <param name="library">The id of the library the file is in</param>
+        /// <param name="path">Path to the file</param>
+        /// <param name="size">The size of the thumbnail (vertical and horizontal pixel count)</param>
+        /// <returns></returns>
+        public async Task<byte[]> GetThumbnailImage(String libraryId, string path, int size)
+        {
+            libraryId.ThrowOnNull(nameof(libraryId));
+            path.ThrowOnNull(nameof(path));
+            size.ThrowOnNull(nameof(size));
+
+            GetThumbnailImageRequest req = new GetThumbnailImageRequest(AuthToken, libraryId, path, size);
             return await webConnection.SendRequestAsync(ServerUri, req);
         }
 
         /// <summary>
         /// Uploads a single file
-        /// Does not replace already existing files, instead file will be renamed (e.g. test(1).txt if test.txt already exists)
-        /// Use UpdateSingle to replace an already existing file
+        /// Does not replace already existing files, instead the file will be renamed (e.g. test(1).txt if test.txt already exists)
+        /// Use UpdateSingle to replace the contents of an already existing file
+        /// </summary>            
+        /// <param name="library">The library the file should be uploaded to</param>
+        /// <param name="targetDirectory">The directory the file should be uploaded to</param>
+        /// <param name="targetFilename">The name of the file</param>
+        /// <param name="fileContent">The new content of the file</param>
+        /// <param name="progressCallback">Optional progress callback (will report percentage of upload)</param>
+        public async Task<bool> UploadSingle(SeafLibrary library, string targetDirectory, string targetFilename, Stream fileContent, Action<float> progressCallback = null)
+        {
+            library.ThrowOnNull(nameof(library));
+
+            return await UploadSingle(library.Id, targetDirectory, targetFilename, fileContent, progressCallback);
+        }
+
+        /// <summary>
+        /// Uploads a single file
+        /// Does not replace already existing files, instead the file will be renamed (e.g. test(1).txt if test.txt already exists)
+        /// Use UpdateSingle to replace the contents of an already existing file
         /// </summary>                
-        public async Task<bool> UploadSingle(SeafLibrary library, string targetDirectory, string targetFilename, Stream fileContent, Action<float> progressCallback)
+        /// <param name="libraryId">The id of the library the file should be uploaded to</param>
+        /// <param name="targetDirectory">The directory the file should be uploaded to</param>
+        /// <param name="targetFilename">The name of the file</param>
+        /// <param name="fileContent">The new content of the file</param>
+        /// <param name="progressCallback">Optional progress callback (will report percentage of upload)</param>
+        public async Task<bool> UploadSingle(string libraryId, string targetDirectory, string targetFilename, Stream fileContent, Action<float> progressCallback = null)
         {
             // to upload files we need to get an upload link first            
-            var req = new GetUploadLinkRequest(AuthToken, library.Id);
+            var req = new GetUploadLinkRequest(AuthToken, libraryId);
             string uploadLink = await webConnection.SendRequestAsync(ServerUri, req);
             
-            UploadRequest upReq = new UploadRequest(AuthToken, uploadLink, targetDirectory, targetFilename, fileContent, progressCallback);
+            UploadFilesRequest upReq = new UploadFilesRequest(AuthToken, uploadLink, targetDirectory, targetFilename, fileContent, progressCallback);
             return await webConnection.SendRequestAsync(ServerUri, upReq);
         }
 
-        public async Task<bool> UpdateSingle(SeafLibrary library, string targetDirectory, string targetFilename, Stream fileContent, Action<float> progressCallback)
+        /// <summary>
+        /// Update the contents of the given, existing file
+        /// </summary>
+        /// <param name="dirEntry">The file to update</param>
+        /// <param name="fileContent">The new content of the file</param>
+        /// <param name="progressCallback">Optional progress callback (will report percentage of upload)</param>
+        public async Task<bool> UpdateSingle(SeafDirEntry dirEntry, Stream fileContent, Action<float> progressCallback = null)
         {
+            dirEntry.ThrowOnNull(nameof(dirEntry));
+            fileContent.ThrowOnNull(nameof(fileContent));
+
+            if (dirEntry.Type != DirEntryType.File)
+                throw new ArgumentException("The given dirEntry does not represent a file.");
+
+            return await UpdateSingle(dirEntry.LibraryId, dirEntry.Directory, dirEntry.Name, fileContent, progressCallback);
+        }
+
+        /// <summary>
+        /// Update the contents of the given, existing file
+        /// </summary>
+        /// <param name="library">The library the file is in</param>
+        /// <param name="targetDirectory">The directory the file is in</param>
+        /// <param name="targetFilename">The name of the file</param>
+        /// <param name="fileContent">The new content of the file</param>
+        /// <param name="progressCallback">Optional progress callback (will report percentage of upload)</param>
+        public async Task<bool> UpdateSingle(SeafLibrary library, string targetDirectory, string targetFilename, Stream fileContent, Action<float> progressCallback = null)
+        {
+            library.ThrowOnNull(nameof(library));
+            return await UpdateSingle(library.Id, targetDirectory, targetFilename, fileContent, progressCallback);
+        }
+
+        /// <summary>
+        /// Update the contents of the given, existing file
+        /// </summary>
+        /// <param name="libraryId">Id of the library the file is in</param>
+        /// <param name="targetDirectory">The directory the file is in</param>
+        /// <param name="targetFilename">The name of the file</param>
+        /// <param name="fileContent">The new content of the file</param>
+        /// <param name="progressCallback">Optional progress callback (will report percentage of upload)</param>
+        protected async Task<bool> UpdateSingle(String libraryId, string targetDirectory, string targetFilename, Stream fileContent, Action<float> progressCallback)
+        {
+            libraryId.ThrowOnNull(nameof(libraryId));
+            targetDirectory.ThrowOnNull(nameof(targetDirectory));
+            targetFilename.ThrowOnNull(nameof(targetFilename));
+            fileContent.ThrowOnNull(nameof(fileContent));
+
             // to update files we need to get an update link first            
-            var req = new GetUpdateLinkRequest(AuthToken, library.Id, targetDirectory);
+            var req = new GetUpdateLinkRequest(AuthToken, libraryId, targetDirectory);
             string uploadLink = await webConnection.SendRequestAsync(ServerUri, req);
 
-            UpdateRequest upReq = new UpdateRequest(AuthToken, uploadLink, targetDirectory, targetFilename, fileContent, progressCallback);
+            UpdateFileRequest upReq = new UpdateFileRequest(AuthToken, uploadLink, targetDirectory, targetFilename, fileContent, progressCallback);
             return await webConnection.SendRequestAsync(ServerUri, upReq);
         }
 
         /// <summary>
         /// Provide the password for the given encrypted library
         /// in order to be able to access its contents
+        /// (listing directory contents does NOT require the library to be decrypted)
         /// </summary>
         public async Task<bool> DecryptLibrary(SeafLibrary library, char[] password)
         {
             DecryptLibraryRequest r = new DecryptLibraryRequest(AuthToken, library.Id, password);
             return await webConnection.SendRequestAsync(ServerUri, r);
         }
-        
+
+        /// <summary>
+        /// Returns a list of all files the user has marked as favorite (starred)
+        /// </summary>
+        public async Task<IList<SeafDirEntry>> ListStarredFiles()
+        {
+            ListStarredFilesRequest req = new ListStarredFilesRequest(AuthToken);
+            return await webConnection.SendRequestAsync(ServerUri, req);
+        }
+
+        /// <summary>
+        /// Add the file to the list of starred files
+        /// </summary>
+        /// <param name="dirEntry">The file to star</param>
+        public async Task<bool> StarFile(SeafDirEntry dirEntry)
+        {
+            StarFileRequest req = new StarFileRequest(AuthToken, dirEntry.LibraryId, dirEntry.Path);
+            return await webConnection.SendRequestAsync(ServerUri, req);
+        }
+
+        /// <summary>
+        /// Removes the file from the list of starred files
+        /// </summary>
+        /// <param name="dirEntry">The file to unstar</param>
+        public async Task<bool> UnstarFile(SeafDirEntry dirEntry)
+        {
+            UnstarFileRequest req = new UnstarFileRequest(AuthToken, dirEntry.LibraryId, dirEntry.Path);
+            return await webConnection.SendRequestAsync(ServerUri, req);
+        }
     }
 }

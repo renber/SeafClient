@@ -11,12 +11,12 @@ using System.Net.Http.Headers;
 using System.Diagnostics;
 using SeafClient.Types;
 
-namespace SeafClient.Requests
+namespace SeafClient.Requests.Files
 {
     /// <summary>
     /// Request to update an already existing file using a previously rterieved update link
     /// </summary>
-    public class UpdateRequest : SessionRequest<bool>
+    public class UpdateFileRequest : SessionRequest<bool>
     {
         Action<float> UploadProgress;
 
@@ -52,7 +52,7 @@ namespace SeafClient.Requests
         /// <param name="filename"></param>
         /// <param name="fileContent"></param>
         /// <param name="progressCallback"></param>
-        public UpdateRequest(string authToken, string uploadUri, string targetDirectory, string filename, Stream fileContent, Action<float> progressCallback)
+        public UpdateFileRequest(string authToken, string uploadUri, string targetDirectory, string filename, Stream fileContent, Action<float> progressCallback)
             : this(authToken, uploadUri, targetDirectory, progressCallback, new UploadFileInfo(filename, fileContent))
         {
             // --
@@ -66,7 +66,7 @@ namespace SeafClient.Requests
         /// <param name="filename"></param>
         /// <param name="fileContent"></param>
         /// <param name="progressCallback"></param>
-        public UpdateRequest(string authToken, string uploadUri, string targetDirectory, Action<float> progressCallback, UploadFileInfo updateFile)
+        public UpdateFileRequest(string authToken, string uploadUri, string targetDirectory, Action<float> progressCallback, UploadFileInfo updateFile)
             : base(authToken)
         {
             UploadUri = uploadUri;

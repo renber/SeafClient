@@ -6,7 +6,7 @@ using System.Text;
 using System.Net.Http;
 using SeafClient.Types;
 
-namespace SeafClient.Requests
+namespace SeafClient.Requests.UserAccountInfo
 {
     /// <summary>
     /// Request to receive general account information of the user

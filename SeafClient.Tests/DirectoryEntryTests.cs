@@ -6,6 +6,8 @@ using System.Net;
 using System.Linq;
 using SeafClient.Types;
 using System.Collections.Generic;
+using SeafClient.Requests.Directories;
+using SeafClient.Requests.Files;
 
 namespace SeafClient.Tests
 {

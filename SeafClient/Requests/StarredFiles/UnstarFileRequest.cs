@@ -7,7 +7,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SeafClient.Requests
+namespace SeafClient.Requests.StarredFiles
 {
     /// <summary>
     /// Request to unstar an already starred file

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using SeafClient.Types;
 using SeafClient.Utils;
 
-namespace SeafClient.Requests
+namespace SeafClient.Requests.Libraries
 {
     /// <summary>
     /// Request to decrypt a library on the server
