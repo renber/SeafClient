@@ -24,7 +24,7 @@ namespace SeafClient.Converters
             {
                 var timestamp = serializer.Deserialize<long>(reader);
                 return SeafDateUtils.SeafileTimeToDateTime(timestamp);
-            } catch (JsonSerializationException e)
+            } catch (JsonSerializationException)
             {
                 // value is probably null
                 return null;
