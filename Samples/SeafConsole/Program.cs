@@ -1,4 +1,5 @@
 ﻿using SeafClient;
+using SeafClient.Types;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,8 +17,8 @@ namespace SeafConsole
         static void Main(string[] args)
         {
             // prompt the user for seafile server, username & password
-            string host = "";
-            string user = "";
+            string host = "https://raspsea.my-homeip.de:48000";
+            string user = "seafile_test@genie-soft.de";
 
             bool validUri = false;
             Uri serverUri = null;
@@ -92,6 +93,15 @@ namespace SeafConsole
                 Console.WriteLine("Space total: " + (info.HasUnlimitedSpace ? "unlimited" : MiscUtils.FormatByteSize(info.Quota)));
                 Console.WriteLine("");
 
+                // create a test library
+                /*Console.Write("Creating library...");
+                var newLib = await session.CreateLibrary("TestLib", "123");
+                Console.WriteLine("OK");*/
+
+                // default library
+                SeafLibrary defLib = await session.GetDefaultLibrary();
+                Console.WriteLine("Default library: " + defLib.Name);
+                                
                 // retrieve user's libraries & shared libraries
                 var libs = await session.ListLibraries();
                 libs.Union(await session.ListSharedLibraries());
@@ -102,7 +112,7 @@ namespace SeafConsole
                 foreach (var lib in libs)
                 {
                     string permission = lib.Permission == SeafClient.Types.SeafPermission.ReadOnly ? "r" : "rw";
-                    lines.Add(new string[] { lib.Timestamp.ToString(), permission, lib.Name, lib.Owner });                    
+                    lines.Add(new string[] { lib.Timestamp.ToString(), permission, lib.Name, lib.Owner });
                 }
 
                 Console.WriteLine(MiscUtils.PadElementsInLines(lines, 2));
