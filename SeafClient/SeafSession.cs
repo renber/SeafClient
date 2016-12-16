@@ -805,6 +805,32 @@ namespace SeafClient
         }
 
         /// <summary>
+        /// Get a upload link for the given library
+        /// </summary>
+        /// <param name="libraryId">The id of the library to upload files to</param>        
+        /// <returns>The upload link</returns>
+        public async Task<string> GetUploadLink(SeafLibrary library)
+        {
+            library.ThrowOnNull(nameof(library));
+
+            var req = new GetUploadLinkRequest(AuthToken, library.Id);
+            return await webConnection.SendRequestAsync(ServerUri, req);
+        }
+
+        /// <summary>
+        /// Get a upload link for the library with the given id
+        /// </summary>
+        /// <param name="libraryId">The id of the library to upload files to</param>        
+        /// <returns>The upload link</returns>
+        public async Task<string> GetUploadLink(string libraryId)
+        {
+            libraryId.ThrowOnNull(nameof(libraryId));
+
+            var req = new GetUploadLinkRequest(AuthToken, libraryId);
+            return await webConnection.SendRequestAsync(ServerUri, req);                       
+        }
+
+        /// <summary>
         /// Update the contents of the given, existing file
         /// </summary>
         /// <param name="dirEntry">The file to update</param>
