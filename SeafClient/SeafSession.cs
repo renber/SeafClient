@@ -768,6 +768,23 @@ namespace SeafClient
         }
 
         /// <summary>
+        /// Return the URL of the thumbnail for the given file and size
+        /// </summary>
+        /// <param name="library">The id of the library the file is in</param>
+        /// <param name="path">Path to the file</param>
+        /// <param name="size">The size of the thumbnail (vertical and horizontal pixel count)</param>
+        /// <returns></returns>
+        public String GetThumbnailUrl(String libraryId, string path, int size)
+        {
+            libraryId.ThrowOnNull(nameof(libraryId));
+            path.ThrowOnNull(nameof(path));
+            size.ThrowOnNull(nameof(size));
+
+            GetThumbnailImageRequest req = new GetThumbnailImageRequest(AuthToken, libraryId, path, size);            
+            return this.ServerUri.ToString() +  req.CommandUri;
+        }
+
+        /// <summary>
         /// Uploads a single file
         /// Does not replace already existing files, instead the file will be renamed (e.g. test(1).txt if test.txt already exists)
         /// Use UpdateSingle to replace the contents of an already existing file
@@ -805,11 +822,34 @@ namespace SeafClient
         }
 
         /// <summary>
-        /// Update the contents of the given, existing file
-        /// </summary>
-        /// <param name="dirEntry">The file to update</param>
-        /// <param name="fileContent">The new content of the file</param>
-        /// <param name="progressCallback">Optional progress callback (will report percentage of upload)</param>
+        /// Retrieve a link to upload files for the given library
+        /// </summary>                
+        /// <param name="libraryId">The library the file should be uploaded to</param>
+        public async Task<string> GetUploadLink(SeafLibrary library)
+        {
+            library.ThrowOnNull(nameof(library));
+            return await GetUploadLink(library.Id);
+        }
+
+        /// <summary>
+        /// Retrieve a link to upload files for the given library
+        /// </summary>                
+        /// <param name="libraryId">The id of the library the file should be uploaded to</param>
+        public async Task<string> GetUploadLink(string libraryId)
+        {
+            libraryId.ThrowOnNull(nameof(libraryId));
+
+            // to upload files we need to get an upload link first            
+            var req = new GetUploadLinkRequest(AuthToken, libraryId);
+            return await webConnection.SendRequestAsync(ServerUri, req);
+        }
+        
+        /// <summary>
+         /// Update the contents of the given, existing file
+         /// </summary>
+         /// <param name="dirEntry">The file to update</param>
+         /// <param name="fileContent">The new content of the file</param>
+         /// <param name="progressCallback">Optional progress callback (will report percentage of upload)</param>
         public async Task<bool> UpdateSingle(SeafDirEntry dirEntry, Stream fileContent, Action<float> progressCallback = null)
         {
             dirEntry.ThrowOnNull(nameof(dirEntry));

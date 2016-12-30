@@ -90,7 +90,7 @@ namespace SeafClient.Requests.Files
             foreach (var hi in GetAdditionalHeaders())
                 request.Headers.Add(hi.Key, hi.Value);
 
-            var content = new MultipartFormDataContent(boundary);
+            var content = new MultipartFormDataContentEx(boundary);
 
             // Add files to upload to the request
             foreach (var f in Files)
@@ -118,13 +118,10 @@ namespace SeafClient.Requests.Files
             content.Add(dirContent);
 
             // transmit the content length, for this we use the private method TryComputeLength() called by reflection
-            long conLen = 0;                        
-            var func = typeof(MultipartContent).GetTypeInfo().GetDeclaredMethod("TryComputeLength");
+            long conLen;
 
-            object[] args = new object[] { 0L };
-            var r = func.Invoke(content, args);
-            if (r is bool && (bool)r)
-                conLen = (long)args[0];
+            if (!content.ComputeLength(out conLen))
+                conLen = 0;
 
             // the seafile-server implementation rejects the content-type if the boundary value is
             // placed inside quotes which is what HttpClient does, so we have to redefine the content-type without using quotes
@@ -158,6 +155,23 @@ namespace SeafClient.Requests.Files
         {
             Filename = filename;
             FileContent = content;
+        }
+    }
+
+    /// <summary>
+    /// Child class of MultipartFormDataContent which exposes the TryComputeLength function
+    /// </summary>
+    class MultipartFormDataContentEx : MultipartFormDataContent
+    {
+        public MultipartFormDataContentEx(String boundary)
+            : base(boundary)
+        {
+            // --
+        }
+
+        public bool ComputeLength(out long length)
+        {
+            return base.TryComputeLength(out length);
         }
     }
 }
