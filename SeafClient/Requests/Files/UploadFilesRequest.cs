@@ -117,8 +117,9 @@ namespace SeafClient.Requests.Files
             dirContent.Headers.TryAddWithoutValidation("Content-Disposition", @"form-data; name=""parent_dir""");
             content.Add(dirContent);
 
-            // transmit the content length
-            long conLen;                        
+            // transmit the content length, for this we use the private method TryComputeLength() called by reflection
+            long conLen;
+
             if (!content.ComputeLength(out conLen))
                 conLen = 0;
 
@@ -157,19 +158,17 @@ namespace SeafClient.Requests.Files
         }
     }
 
+    /// <summary>
+    /// Child class of MultipartFormDataContent which exposes the TryComputeLength function
+    /// </summary>
     class MultipartFormDataContentEx : MultipartFormDataContent
     {
-        public MultipartFormDataContentEx(string boundary)
+        public MultipartFormDataContentEx(String boundary)
             : base(boundary)
         {
-            // --            
+            // --
         }
 
-        /// <summary>
-        /// Makes the TryComputeLength method of MultipartFormDataContent visible to the outside
-        /// </summary>
-        /// <param name="length"></param>
-        /// <returns></returns>
         public bool ComputeLength(out long length)
         {
             return base.TryComputeLength(out length);
