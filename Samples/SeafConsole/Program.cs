@@ -17,8 +17,8 @@ namespace SeafConsole
         static void Main(string[] args)
         {
             // prompt the user for seafile server, username & password
-            string host = "https://raspsea.my-homeip.de:48000";
-            string user = "seafile_test@genie-soft.de";
+            string host = "";
+            string user = "";
 
             bool validUri = false;
             Uri serverUri = null;
