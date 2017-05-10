@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -11,27 +10,26 @@ using System.Threading.Tasks;
 namespace SeafClient.Utils
 {
     /// <summary>
-    /// A HttpContent implementation to transmit form data (key-value pairs)
-    /// which zeroes out the value arrays as soon as the content has been written to a request stream
-    /// (Implementation of FormUrlEncodedContent which does not leak values in memory after the request has been sent)
+    ///     A <see cref="HttpContent"/> implementation to transmit form data (key-value pairs)
+    ///     which zeroes out the value arrays as soon as the content has been written to a request stream
+    ///     (Implementation of FormUrlEncodedContent which does not leak values in memory after the request has been sent)
     /// </summary>
-    class CredentialFormContent : HttpContent
+    internal class CredentialFormContent : HttpContent
     {
-        List<KeyValuePair<string, char[]>> FormData;
+        private readonly List<KeyValuePair<string, char[]>> _formData;
 
         public CredentialFormContent(params KeyValuePair<string, char[]>[] formData)
-            : base()
         {
-            this.Headers.ContentType = MediaTypeHeaderValue.Parse("application/x-www-form-urlencoded");
+            Headers.ContentType = MediaTypeHeaderValue.Parse("application/x-www-form-urlencoded");
 
-            FormData = new List<KeyValuePair<string, char[]>>();
-            foreach(var kv in formData)
+            _formData = new List<KeyValuePair<string, char[]>>();
+            foreach (var kv in formData)
             {
                 var pair = new KeyValuePair<string, char[]>(kv.Key, new char[kv.Value.Length]);
                 Array.Copy(kv.Value, pair.Value, kv.Value.Length);
-                FormData.Add(pair);
-            }            
-        }        
+                _formData.Add(pair);
+            }
+        }
 
         protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context)
         {
@@ -43,15 +41,15 @@ namespace SeafClient.Utils
             {
                 ClearPassword();
             }
-        }        
+        }
 
-        async Task WriteFormDataToStream(Stream stream)
+        private async Task WriteFormDataToStream(Stream stream)
         {
-            byte[] andBuf = Encoding.UTF8.GetBytes("&");
+            var andBuf = Encoding.UTF8.GetBytes("&");
 
-            for (int i = 0; i < FormData.Count; i++)
+            for (var i = 0; i < _formData.Count; i++)
             {
-                var pair = FormData[i];
+                var pair = _formData[i];
                 // enumerate parameters with &
                 if (i > 0)
                     await stream.WriteAsync(andBuf, 0, andBuf.Length);
@@ -61,11 +59,12 @@ namespace SeafClient.Utils
             }
         }
 
-        async Task WritePairToStream(Stream stream, KeyValuePair<String, char[]> pair)
+        private async Task WritePairToStream(Stream stream, KeyValuePair<string, char[]> pair)
         {
-            byte[] eqValue = Encoding.UTF8.GetBytes("=");
+            var eqValue = Encoding.UTF8.GetBytes("=");
             byte[] utf8Value = null;
             byte[] encodedValue = null;
+
             try
             {
                 // write key (and escape it first)
@@ -80,8 +79,9 @@ namespace SeafClient.Utils
                 utf8Value = Encoding.UTF8.GetBytes(pair.Value);
                 encodedValue = WebUtility.UrlEncodeToBytes(utf8Value, 0, utf8Value.Length);
                 await stream.WriteAsync(encodedValue, 0, encodedValue.Length);
-            } finally
-            {                
+            }
+            finally
+            {
                 if (encodedValue != null)
                     Array.Clear(encodedValue, 0, encodedValue.Length);
                 if (utf8Value != null)
@@ -89,16 +89,16 @@ namespace SeafClient.Utils
             }
         }
 
-        void ClearPassword()
+        private void ClearPassword()
         {
-            foreach(var pair in FormData)
+            foreach (var pair in _formData)
                 Array.Clear(pair.Value, 0, pair.Value.Length);
         }
 
         protected override bool TryComputeLength(out long length)
-        { 
+        {
             length = -1;
-            return false;           
+            return false;
         }
     }
 }

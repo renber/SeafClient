@@ -5,6 +5,7 @@ using System.Net;
 using System.Security;
 using System.Threading.Tasks;
 using SeafClient;
+using SeafClient.Exceptions;
 using SeafClient.Types;
 
 namespace SeafConsole
