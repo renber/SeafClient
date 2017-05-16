@@ -1,37 +1,34 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SeafClient.Requests.Files;
-using SeafClient.Types;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Globalization;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SeafClient.Requests.Files;
+using SeafClient.Types;
 
 namespace SeafClient.Tests
 {
     [TestClass]
     public class FileTests : SeafTestClassBase
     {
-
         [TestMethod]
         public void Test_GetFileDetail_Success()
         {
-            GetFileDetailRequest req = new GetFileDetailRequest(FakeToken, FakeRepoId, "/test/subfolder/foo.py");
+            var request = new GetFileDetailRequest(FakeToken, FakeRepoId, "/test/subfolder/foo.py");
 
-            HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.OK);
-            m.Content = new StringContent(@"{
+            var message = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(@"{
                                             ""id"": ""013d3d38fed38b3e8e26b21bb3463eab6831194f"",
                                             ""mtime"": 1398148877,
                                             ""type"": ""file"",
                                             ""name"": ""foo.py"",
                                             ""size"": 22
-                                            }]");
+                                            }]")
+            };
 
-            Assert.IsTrue(req.WasSuccessful(m));
-            SeafDirEntry result = ExecuteSync(() => req.ParseResponseAsync(m));
+            Assert.IsTrue(request.WasSuccessful(message));
+            var result = ExecuteSync(() => request.ParseResponseAsync(message));
 
             Assert.AreEqual("foo.py", result.Name);
             Assert.AreEqual(FakeRepoId, result.LibraryId);
@@ -41,7 +38,7 @@ namespace SeafClient.Tests
             Assert.AreEqual(22, result.Size);
             // converted the timestamp 1398148877 using http://www.onlineconversion.com/unix_time.htm
             // note: comparison is done in local time
-            Assert.AreEqual(DateTime.Parse("Tue, 22 Apr 2014 06:41:17 GMT", CultureInfo.InvariantCulture), result.Timestamp);                 
+            Assert.AreEqual(DateTime.Parse("Tue, 22 Apr 2014 06:41:17 GMT", CultureInfo.InvariantCulture), result.Timestamp);
         }
     }
 }
