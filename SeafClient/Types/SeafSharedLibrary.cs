@@ -1,15 +1,11 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using Newtonsoft.Json;
 using SeafClient.Converters;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SeafClient.Types
 {
     /// <summary>
-    /// Represents a shared library
+    ///     Represents a shared library
     /// </summary>
     public class SeafSharedLibrary : SeafLibrary
     {
@@ -25,7 +21,8 @@ namespace SeafClient.Types
         [JsonProperty("user")]
         public override string Owner { get; set; }
 
-        [JsonProperty("last_modified"), JsonConverter(typeof(SeafTimestampConverter))]
+        [JsonProperty("last_modified")]
+        [JsonConverter(typeof(SeafTimestampConverter))]
         public override DateTime? Timestamp { get; set; }
     }
 }

@@ -1,13 +1,10 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SeafClient.Requests;
-using System.Net.Http;
+﻿using System.Linq;
 using System.Net;
-using System.Linq;
-using SeafClient.Types;
-using System.Collections.Generic;
+using System.Net.Http;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SeafClient.Requests.Directories;
 using SeafClient.Requests.Files;
+using SeafClient.Types;
 
 namespace SeafClient.Tests
 {
@@ -17,12 +14,11 @@ namespace SeafClient.Tests
         [TestMethod]
         public void Test_ListDirectoryEntries_HttpRequest()
         {
-            ListDirectoryEntriesRequest req = new ListDirectoryEntriesRequest(FakeToken, FakeRepoId, "/test/subfolder/");
+            var request = new ListDirectoryEntriesRequest(FakeToken, FakeRepoId, "/test/subfolder/");
+            var httpRequest = TestConnection.CreateHttpRequestMessage(DummyServerUri, request);
 
-            var httpReq = TestConnection.CreateHttpRequestMessage(DummyServerUri, req);
-
-            Assert.AreEqual(HttpMethod.Get, httpReq.Method);
-            String uri = httpReq.RequestUri.ToString();
+            Assert.AreEqual(HttpMethod.Get, httpRequest.Method);
+            var uri = httpRequest.RequestUri.ToString();
             Assert.IsTrue(uri.StartsWith(DummyServerUri + "api2/repos/" + FakeRepoId + "/dir/?"));
             // test path parameter
             Assert.IsTrue(uri.Contains("p=%2Ftest%2Fsubfolder%2F"));
@@ -31,10 +27,11 @@ namespace SeafClient.Tests
         [TestMethod]
         public void Test_ListDirectoryEntries_Success()
         {
-            ListDirectoryEntriesRequest req = new ListDirectoryEntriesRequest(FakeToken, FakeRepoId, "/test/subfolder/");
+            var request = new ListDirectoryEntriesRequest(FakeToken, FakeRepoId, "/test/subfolder/");
 
-            HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.OK);
-            m.Content = new StringContent(@"[{
+            var message = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(@"[{
                             ""id"": ""0000000000000000000000000000000000000000"",
                             ""type"": ""file"",
                             ""name"": ""test1.c"",
@@ -42,10 +39,11 @@ namespace SeafClient.Tests
                           }, {
                             ""id"": ""e4fe14c8cda2206bb9606907cf4fca6b30221cf9"",
                             ""type"": ""dir"",
-                            ""name"": ""test_dir""}]");
+                            ""name"": ""test_dir""}]")
+            };
 
-            Assert.IsTrue(req.WasSuccessful(m));
-            IList<SeafDirEntry> result = ExecuteSync(() => req.ParseResponseAsync(m));
+            Assert.IsTrue(request.WasSuccessful(message));
+            var result = ExecuteSync(() => request.ParseResponseAsync(message));
             Assert.IsNotNull(result);
             Assert.AreEqual(2, result.Count);
             Assert.AreEqual(1, result.Count(x => x.Type == DirEntryType.Dir));
@@ -60,21 +58,20 @@ namespace SeafClient.Tests
         [TestMethod]
         public void Test_AccountInfo_Error()
         {
-            ListDirectoryEntriesRequest req = new ListDirectoryEntriesRequest(FakeToken, FakeRepoId, "/test/subfolder/");
-            HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.NotFound);
+            var request = new ListDirectoryEntriesRequest(FakeToken, FakeRepoId, "/test/subfolder/");
+            var message = new HttpResponseMessage(HttpStatusCode.NotFound);
 
-            Assert.IsFalse(req.WasSuccessful(m));            
+            Assert.IsFalse(request.WasSuccessful(message));
         }
 
         [TestMethod]
         public void Test_DeleteDirEntry_HttpRequest()
         {
-            DeleteDirEntryRequest req = new DeleteDirEntryRequest(FakeToken, FakeRepoId, "/test/subfolder/");
+            var request = new DeleteDirEntryRequest(FakeToken, FakeRepoId, "/test/subfolder/");
+            var httpRequest = TestConnection.CreateHttpRequestMessage(DummyServerUri, request);
 
-            var httpReq = TestConnection.CreateHttpRequestMessage(DummyServerUri, req);
-
-            Assert.AreEqual(HttpMethod.Delete, httpReq.Method);
-            String uri = httpReq.RequestUri.ToString();
+            Assert.AreEqual(HttpMethod.Delete, httpRequest.Method);
+            var uri = httpRequest.RequestUri.ToString();
             Assert.IsTrue(uri.StartsWith(DummyServerUri + "api2/repos/" + FakeRepoId + "/dir/?"));
             // test path parameter
             Assert.IsTrue(uri.Contains("p=%2Ftest%2Fsubfolder%2F"));
@@ -83,83 +80,77 @@ namespace SeafClient.Tests
         [TestMethod]
         public void Test_DeleteDirEntry_Success()
         {
-            DeleteDirEntryRequest req = new DeleteDirEntryRequest(FakeToken, FakeRepoId, "/test/subfolder/");
+            var request = new DeleteDirEntryRequest(FakeToken, FakeRepoId, "/test/subfolder/");
+            var message = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("\"success\"") };
 
-            HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.OK);
-            m.Content = new StringContent("\"success\"");
-
-            Assert.IsTrue(req.WasSuccessful(m));
-            Assert.IsTrue(ExecuteSync(() => req.ParseResponseAsync(m)));
+            Assert.IsTrue(request.WasSuccessful(message));
+            Assert.IsTrue(ExecuteSync(() => request.ParseResponseAsync(message)));
         }
 
         [TestMethod]
         public void Test_DeleteDirEntry_Error()
         {
-            DeleteDirEntryRequest req = new DeleteDirEntryRequest(FakeToken, FakeRepoId, "/test/subfolder/");
+            var request = new DeleteDirEntryRequest(FakeToken, FakeRepoId, "/test/subfolder/");
+            var message = new HttpResponseMessage(HttpStatusCode.BadRequest);
 
-            HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.BadRequest);            
-
-            Assert.IsFalse(req.WasSuccessful(m));
-            Assert.AreEqual(SeafErrorCode.PathDoesNotExist, req.GetSeafError(m).SeafErrorCode);
+            Assert.IsFalse(request.WasSuccessful(message));
+            Assert.AreEqual(SeafErrorCode.PathDoesNotExist, request.GetSeafError(message).SeafErrorCode);
         }
 
         [TestMethod]
         public void Test_MoveFileEntry_Success()
         {
-            MoveFileRequest req = new MoveFileRequest(FakeToken, FakeRepoId, "/test/file.txt", FakeRepoId, "/newdir/");
+            var request = new MoveFileRequest(FakeToken, FakeRepoId, "/test/file.txt", FakeRepoId, "/newdir/");
+            var message = new HttpResponseMessage(HttpStatusCode.MovedPermanently) { Content = new StringContent("\"success\"") };
 
-            HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.MovedPermanently);
-            m.Content = new StringContent("\"success\"");
-
-            Assert.IsTrue(req.WasSuccessful(m));
+            Assert.IsTrue(request.WasSuccessful(message));
         }
 
         [TestMethod]
         public void Test_MoveFileEntry_Error()
         {
-            MoveFileRequest req = new MoveFileRequest(FakeToken, FakeRepoId, "/test/file.txt", FakeRepoId, "/newdir/");
+            var request = new MoveFileRequest(FakeToken, FakeRepoId, "/test/file.txt", FakeRepoId, "/newdir/");
 
-            HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.Forbidden);            
-            Assert.IsFalse(req.WasSuccessful(m));
+            var message = new HttpResponseMessage(HttpStatusCode.Forbidden);
+            Assert.IsFalse(request.WasSuccessful(message));
 
-            m = new HttpResponseMessage(HttpStatusCode.BadRequest);
-            Assert.IsFalse(req.WasSuccessful(m));
+            message = new HttpResponseMessage(HttpStatusCode.BadRequest);
+            Assert.IsFalse(request.WasSuccessful(message));
 
             // there seems to be a bug in the seafile web api
             // as the server returns NotFound even when the renaming was successful
             // so we cannot test this
-            //m = new HttpResponseMessage(HttpStatusCode.NotFound);
-            //Assert.IsFalse(req.WasSuccessful(m));
 
-            m = new HttpResponseMessage(HttpStatusCode.InternalServerError);
-            Assert.IsFalse(req.WasSuccessful(m));
+            // message = new HttpResponseMessage(HttpStatusCode.NotFound);
+            // Assert.IsFalse(req.WasSuccessful(m));
+
+            message = new HttpResponseMessage(HttpStatusCode.InternalServerError);
+            Assert.IsFalse(request.WasSuccessful(message));
         }
 
 
         [TestMethod]
         public void Test_CopyFileEntry_Success()
         {
-            CopyFileRequest req = new CopyFileRequest(FakeToken, FakeRepoId, "/test/file.txt", FakeRepoId, "/newdir/");
+            var request = new CopyFileRequest(FakeToken, FakeRepoId, "/test/file.txt", FakeRepoId, "/newdir/");
+            var message = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("\"success\"") };
 
-            HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.OK);
-            m.Content = new StringContent("\"success\"");
-
-            Assert.IsTrue(req.WasSuccessful(m));
+            Assert.IsTrue(request.WasSuccessful(message));
         }
 
         [TestMethod]
         public void Test_CopyFileEntry_Error()
         {
-            CopyFileRequest req = new CopyFileRequest(FakeToken, FakeRepoId, "/test/file.txt", FakeRepoId, "/newdir/");
+            var request = new CopyFileRequest(FakeToken, FakeRepoId, "/test/file.txt", FakeRepoId, "/newdir/");
 
-            HttpResponseMessage m = new HttpResponseMessage(HttpStatusCode.Forbidden);
-            Assert.IsFalse(req.WasSuccessful(m));
+            var message = new HttpResponseMessage(HttpStatusCode.Forbidden);
+            Assert.IsFalse(request.WasSuccessful(message));
 
-            m = new HttpResponseMessage(HttpStatusCode.BadRequest);
-            Assert.IsFalse(req.WasSuccessful(m));
+            message = new HttpResponseMessage(HttpStatusCode.BadRequest);
+            Assert.IsFalse(request.WasSuccessful(message));
 
-            m = new HttpResponseMessage(HttpStatusCode.InternalServerError);
-            Assert.IsFalse(req.WasSuccessful(m));
+            message = new HttpResponseMessage(HttpStatusCode.InternalServerError);
+            Assert.IsFalse(request.WasSuccessful(message));
         }
     }
 }

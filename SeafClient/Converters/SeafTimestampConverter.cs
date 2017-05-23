@@ -1,21 +1,17 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using Newtonsoft.Json;
 using SeafClient.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SeafClient.Converters
 {
     /// <summary>
-    /// JsonConverter for converting between dotnet datetimes and unix timestamps
+    ///     <see cref="JsonConverter"/> for converting between <see cref="DateTime"/> and unix timestamps
     /// </summary>
-    class SeafTimestampConverter : JsonConverter
+    internal class SeafTimestampConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {
-            return (objectType == typeof(DateTime)) || (objectType == typeof(DateTime?));
+            return objectType == typeof(DateTime) || objectType == typeof(DateTime?);
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
@@ -24,7 +20,8 @@ namespace SeafClient.Converters
             {
                 var timestamp = serializer.Deserialize<long>(reader);
                 return SeafDateUtils.SeafileTimeToDateTime(timestamp);
-            } catch (JsonSerializationException)
+            }
+            catch (JsonSerializationException)
             {
                 // value is probably null
                 return null;
@@ -33,10 +30,10 @@ namespace SeafClient.Converters
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            if (value is DateTime)
-                serializer.Serialize(writer, SeafDateUtils.DateTimeToSeafileTime((DateTime)value));
-            else
+            if (!(value is DateTime))
                 throw new InvalidOperationException("SeafTimestampConverter can only serialize datetime objects.");
+
+            serializer.Serialize(writer, SeafDateUtils.DateTimeToSeafileTime((DateTime) value));
         }
     }
 }

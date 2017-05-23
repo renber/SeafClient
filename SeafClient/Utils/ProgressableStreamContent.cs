@@ -1,78 +1,80 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SeafClient.Utils
 {
-
-    enum UploadState { PendingUpload, Uploading, PendingResponse }
+    internal enum UploadState
+    {
+        PendingUpload,
+        Uploading,
+        PendingResponse
+    }
 
     /// <summary>
-    /// HttpContent which has a callback for upload progress
+    ///     <see cref="HttpContent"/> which has a callback for upload progress
     /// </summary>
-    class ProgressableStreamContent : HttpContent
+    internal class ProgressableStreamContent : HttpContent
     {
-        private const int defaultBufferSize = 4096;
+        private const int DefaultBufferSize = 4096;
+        private readonly int _bufferSize;
 
-        private Stream content;
-        private int bufferSize;
-        private bool contentConsumed;
+        private readonly Stream _content;
+        private bool _contentConsumed;
 
-        public UploadState State { get; set; }
-        long UploadedBytes = 0;
+        private readonly Action<float> _progressHandler;
+        private long _uploadedBytes;
 
-        Action<float> ProgressHandler;
-
-        public ProgressableStreamContent(Stream content, Action<float> progressHandler) : this(content, defaultBufferSize, progressHandler) { }
+        public ProgressableStreamContent(Stream content, Action<float> progressHandler) : this(content, DefaultBufferSize, progressHandler)
+        {
+        }
 
         public ProgressableStreamContent(Stream content, int bufferSize, Action<float> progressHandler)
         {
             if (content == null)
-            {
-                throw new ArgumentNullException("content");
-            }
+                throw new ArgumentNullException(nameof(content));
+
             if (bufferSize <= 0)
-            {
-                throw new ArgumentOutOfRangeException("bufferSize");
-            }
+                throw new ArgumentOutOfRangeException(nameof(bufferSize));
 
             State = UploadState.PendingUpload;
 
-            this.content = content;
-            this.bufferSize = bufferSize;
-            this.ProgressHandler = progressHandler;
+            _content = content;
+            _bufferSize = bufferSize;
+            _progressHandler = progressHandler;
         }
 
-        protected async override Task SerializeToStreamAsync(Stream stream, TransportContext context)
-        {            
+        public UploadState State { get; set; }
+
+        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context)
+        {
             PrepareContent();
 
             State = UploadState.PendingUpload;
 
-            var buffer = new Byte[this.bufferSize];
-            var size = content.Length;
+            var buffer = new byte[_bufferSize];
+            var size = _content.Length;
             long uploaded = 0;
 
             State = UploadState.PendingUpload;
 
-            using (content) while (true)
+            using (_content)
+            {
+                while (true)
                 {
-                    var length = content.Read(buffer, 0, buffer.Length);
+                    var length = _content.Read(buffer, 0, buffer.Length);
                     if (length <= 0) break;
 
-                    UploadedBytes = uploaded += length;                
+                    _uploadedBytes = uploaded += length;
 
                     State = UploadState.Uploading;
                     await stream.WriteAsync(buffer, 0, length);
 
-                    if (ProgressHandler != null)                    
-                        ProgressHandler(UploadedBytes * 100 / (float)size);                    
+                    _progressHandler?.Invoke(_uploadedBytes * 100 / (float) size);
                 }
+            }
 
             State = UploadState.PendingResponse;
         }
@@ -80,46 +82,39 @@ namespace SeafClient.Utils
         public long ComputeLength()
         {
             long length;
+
             if (TryComputeLength(out length))
                 return length;
-            else
-                return -1;
+
+            return -1;
         }
 
         protected override bool TryComputeLength(out long length)
         {
-            length = content.Length;
+            length = _content.Length;
             return true;
         }
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
-            {
-                content.Dispose();
-            }
+                _content.Dispose();
+
             base.Dispose(disposing);
         }
 
 
         private void PrepareContent()
         {
-            if (contentConsumed)
+            if (_contentConsumed)
             {
-                // If the content needs to be written to a target stream a 2nd time, then the stream must support
-                // seeking (e.g. a FileStream), otherwise the stream can't be copied a second time to a target 
-                // stream (e.g. a NetworkStream).
-                if (content.CanSeek)
-                {
-                    content.Position = 0;
-                }
+                if (_content.CanSeek)
+                    _content.Position = 0;
                 else
-                {
                     throw new InvalidOperationException("SR.net_http_content_stream_already_read");
-                }
             }
 
-            contentConsumed = true;
+            _contentConsumed = true;
         }
     }
 }
