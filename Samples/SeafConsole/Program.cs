@@ -88,7 +88,7 @@ namespace SeafConsole
                 // retrieve user account info
                 var info = await session.CheckAccountInfo();
                 Console.WriteLine("Account info: ");
-                Console.WriteLine("User name: " + info.Nickname);
+                Console.WriteLine("User name: " + info.Name);
                 Console.WriteLine("Space used: " + MiscUtils.FormatByteSize(info.Usage));
                 Console.WriteLine("Space total: " + (info.HasUnlimitedSpace ? "unlimited" : MiscUtils.FormatByteSize(info.Quota)));
                 Console.WriteLine("");

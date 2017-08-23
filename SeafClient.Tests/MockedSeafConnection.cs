@@ -16,6 +16,11 @@ namespace SeafClient.Tests
             responseCache = new Dictionary<Type, HttpResponseMessage>();
         }
 
+        public void Close()
+        {
+            // nothing to do
+        }
+
         public MockedSeafConnection FakeResponseFor<T>(HttpResponseMessage responseMessage)
             where T : ISeafRequest
         {            
@@ -34,6 +39,12 @@ namespace SeafClient.Tests
                     throw new SeafException(request.GetSeafError(response));
             } else
                 throw new Exception("No mocked response for the request available.");
+        }
+
+        public async Task<T> SendRequestAsync<T>(Uri serverUri, SeafRequest<T> request, TimeSpan? timeout)
+        {
+            // timeout is not supported
+            return await SendRequestAsync(serverUri, request);
         }
     }
 }

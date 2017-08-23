@@ -2,6 +2,7 @@
 using SeafClient.Types;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -95,11 +96,23 @@ namespace SeafClient
             // try to read the response content as JSON object
             var stream = await msg.Content.ReadAsStreamAsync();
             using (StreamReader sr = new StreamReader(stream))
-            using (JsonReader reader = new JsonTextReader(sr))            
             {
-                JsonSerializer serializer = new JsonSerializer();
-                return serializer.Deserialize<TResponse>(reader);
-            }            
+
+#if DEBUG
+                // print response text to the console in debug mode
+                var responseStr = sr.ReadToEnd();
+                Debug.WriteLine("RESPONSE to " + this.GetType().Name);
+                Debug.WriteLine(responseStr);
+                Debug.WriteLine("========");
+                sr.BaseStream.Position = 0;
+#endif
+
+                using (JsonReader reader = new JsonTextReader(sr))
+                {
+                    JsonSerializer serializer = new JsonSerializer();
+                    return serializer.Deserialize<TResponse>(reader);
+                }
+            }           
         }
     }
 

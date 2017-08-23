@@ -937,5 +937,14 @@ namespace SeafClient
             UnstarFileRequest req = new UnstarFileRequest(AuthToken, dirEntry.LibraryId, dirEntry.Path);
             return await webConnection.SendRequestAsync(ServerUri, req);
         }
+
+        /// <summary>
+        /// Ends this seafile session
+        /// (Note: as of now the Session Token remains active since there is no api call to invalidate it)
+        /// </summary>
+        public void Close()
+        {
+            webConnection.Close();
+        }
     }
 }
