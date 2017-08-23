@@ -1,44 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
+using SeafClient.Exceptions;
 
 namespace SeafClient.Tests
 {
-    class MockedSeafConnection : ISeafWebConnection        
+    internal class MockedSeafConnection : ISeafWebConnection
     {
-        private Dictionary<Type, HttpResponseMessage> responseCache;
+        private readonly Dictionary<Type, HttpResponseMessage> _responseCache;
 
         public MockedSeafConnection()
         {
-            responseCache = new Dictionary<Type, HttpResponseMessage>();
+            _responseCache = new Dictionary<Type, HttpResponseMessage>();
         }
 
+            return this;}
         public void Close()
         {
             // nothing to do
         }
-
-        public MockedSeafConnection FakeResponseFor<T>(HttpResponseMessage responseMessage)
-            where T : ISeafRequest
-        {            
-            responseCache.Add(typeof(T), responseMessage);
-            return this;
         }
 
-        public async Task<T> SendRequestAsync<T>(Uri serverUri, SeafRequest<T> request)            
+        public MockedSeafConnection FakeResponseFor<T>(HttpResponseMessage responseMessage) where T : ISeafRequest
         {
-            HttpResponseMessage response;            
-            if (responseCache.TryGetValue(request.GetType(), out response))
-            {
-                if (request.WasSuccessful(response))
-                    return await request.ParseResponseAsync(response);
-                else
-                    throw new SeafException(request.GetSeafError(response));
-            } else
-                throw new Exception("No mocked response for the request available.");
+            _responseCache.Add(typeof(T), responseMessage);
+            return this;
         }
 
         public async Task<T> SendRequestAsync<T>(Uri serverUri, SeafRequest<T> request, TimeSpan? timeout)

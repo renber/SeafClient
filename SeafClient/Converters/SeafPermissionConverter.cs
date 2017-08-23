@@ -1,59 +1,53 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using Newtonsoft.Json;
 using SeafClient.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SeafClient.Converters
 {
     /// <summary>
-    /// JsonConverter 
+    ///     <see cref="JsonConverter"/> for converting the permission <see cref="string"/> to a <see cref="SeafPermission"/>
     /// </summary>
-    class SeafPermissionConverter : JsonConverter
+    internal class SeafPermissionConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {
-            return (objectType == typeof(DateTime));
+            return objectType == typeof(DateTime);
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            var s = serializer.Deserialize<string>(reader);
-            
-            switch (s)
+            var permission = serializer.Deserialize<string>(reader);
+
+            switch (permission)
             {
                 case "r":
                     return SeafPermission.ReadOnly;
                 case "rw":
                     return SeafPermission.ReadAndWrite;
                 default:
-                    throw new ArgumentException("Unknown permission string: " + s);
+                    throw new ArgumentException("Unknown permission string: " + permission);
             }
         }
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            if (value is SeafPermission)
-            {
-                string s;
-                switch ((SeafPermission)value)
-                {
-                    case SeafPermission.ReadOnly:
-                        s = "r";
-                        break;
-                    case SeafPermission.ReadAndWrite:
-                        s = "rw";
-                        break;
-                    default:
-                        throw new ArgumentException("Unknown permission: " + ((SeafPermission)value).ToString());
-                }
-
-                serializer.Serialize(writer, s);
-            }
-            else
+            if (!(value is SeafPermission))
                 throw new InvalidOperationException("SeafPermissionConverter can only serialize SeafPermission objects.");
+
+            string permission;
+            switch ((SeafPermission) value)
+            {
+                case SeafPermission.ReadOnly:
+                    permission = "r";
+                    break;
+                case SeafPermission.ReadAndWrite:
+                    permission = "rw";
+                    break;
+                default:
+                    throw new ArgumentException("Unknown permission: " + (SeafPermission) value);
+            }
+
+            serializer.Serialize(writer, permission);
         }
     }
 }

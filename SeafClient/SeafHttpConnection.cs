@@ -1,11 +1,9 @@
-﻿using SeafClient.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using System.Net.Http;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using SeafClient.Exceptions;
+using SeafClient.Utils;
 
 namespace SeafClient
 {
@@ -15,8 +13,8 @@ namespace SeafClient
     public class SeafHttpConnection : ISeafWebConnection
     {
         HttpClient client;
-
-        /// <summary>
+        
+		/// <summary>
         /// Instantiate a SeafHttpConnection with default values
         /// </summary>
         public SeafHttpConnection()
@@ -32,31 +30,33 @@ namespace SeafClient
         }
 
         /// <summary>
-        /// Return an HttpRequestMessage which represents the given seafile request
+        ///     Return an HttpRequestMessage which represents the given seafile request
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="serverUri"></param>
         /// <param name="request"></param>
         /// <returns></returns>
         public HttpRequestMessage CreateHttpRequestMessage<T>(Uri serverUri, SeafRequest<T> request)
-        {            
-            Uri targetUri = new Uri(serverUri, request.CommandUri);            
+        {
+            var targetUri = new Uri(serverUri, request.CommandUri);
 
             switch (request.HttpAccessMethod)
             {
                 case HttpAccessMethod.Get:
                     return HttpUtils.CreateSimpleRequest(HttpMethod.Get, targetUri, request.GetAdditionalHeaders());
                 case HttpAccessMethod.Post:
-                    return HttpUtils.CreatePostRequest(targetUri, request.GetAdditionalHeaders(), request.GetPostParameters());
+                    return HttpUtils.CreatePostRequest(targetUri, request.GetAdditionalHeaders(),
+                        request.GetPostParameters());
                 case HttpAccessMethod.Delete:
                     return HttpUtils.CreateSimpleRequest(HttpMethod.Delete, targetUri, request.GetAdditionalHeaders());
                 case HttpAccessMethod.Custom:
                     return request.GetCustomizedRequest(serverUri);
                 default:
-                    throw new ArgumentException("Unsupported method: " + request.HttpAccessMethod.ToString());
+                    throw new ArgumentException("Unsupported method: " + request.HttpAccessMethod);
             }
         }
-
+       
+ 
         /// <summary>
         /// Send the given request to the given seafile server
         /// </summary>
@@ -69,7 +69,7 @@ namespace SeafClient
         {
             return await SendRequestAsync(serverUri, request, null);
         }
-
+ 
         /// <summary>
         /// Send the given request to the given seafile server
         /// </summary>

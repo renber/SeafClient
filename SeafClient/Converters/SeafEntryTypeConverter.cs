@@ -1,22 +1,17 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using Newtonsoft.Json;
 using SeafClient.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SeafClient.Converters
 {
-
     /// <summary>
-    /// JsonConverter for converting the boolean JSON field 'dir' to a DirEntryType
+    ///     <see cref="JsonConverter"/> for converting the directory <see cref="bool"/> to a <see cref="DirEntryType"/>
     /// </summary>
-    class SeafEntryTypeConverter : JsonConverter
+    internal class SeafEntryTypeConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {
-            return (objectType == typeof(bool));
+            return objectType == typeof(bool);
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
@@ -27,10 +22,10 @@ namespace SeafClient.Converters
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            if (value is DirEntryType)
-                serializer.Serialize(writer, (DirEntryType)value == DirEntryType.Dir);
-            else
+            if (!(value is DirEntryType))
                 throw new InvalidOperationException("SeafEntryTypeConverter can only serialize DirEntryType values.");
+
+            serializer.Serialize(writer, (DirEntryType) value == DirEntryType.Dir);
         }
     }
 }

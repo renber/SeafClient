@@ -1,23 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SeafClient
 {
     /// <summary>
-    /// Interface for classes which execute seafile web api requests
+    ///     Interface for classes which execute seafile web api requests
     /// </summary>
     public interface ISeafWebConnection
     {
         /// <summary>
-        /// Execute the given Seafile request and return the response
+        ///     Execute the given Seafile request and return the response
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="serverUri">The server address</param>
-        /// <param name="request">The request to send</param>        
+        /// <param name="request">The request to send</param>
         /// <returns>The response</returns>
         /// <exception cref="SeafException"></exception>
         Task<T> SendRequestAsync<T>(Uri serverUri, SeafRequest<T> request);

@@ -1,21 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SeafClient
+﻿namespace SeafClient
 {
     public static class SeafConnectionFactory
     {
-        static ISeafWebConnection defaultConnection = new SeafHttpConnection();
+        private static readonly ISeafWebConnection DefaultConnection = new SeafHttpConnection();
 
         /// <summary>
-        /// Returns the default implementation for ISeafWebConnection
-        /// </summary>        
+        ///     Returns the default implementation for ISeafWebConnection
+        /// </summary>
         public static ISeafWebConnection GetDefaultConnection()
         {
-            return defaultConnection;
+            return DefaultConnection;
         }
     }
 }

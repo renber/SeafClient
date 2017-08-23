@@ -1,83 +1,79 @@
-﻿using SeafClient;
-using SeafClient.Types;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
-using System.Runtime.InteropServices;
 using System.Security;
-using System.Text;
 using System.Threading.Tasks;
+using SeafClient;
+using SeafClient.Exceptions;
+using SeafClient.Types;
 
 namespace SeafConsole
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main()
         {
             // prompt the user for seafile server, username & password
-            string host = "";
-            string user = "";
+            var host = string.Empty;
+            var user = string.Empty;
 
-            bool validUri = false;
+            var validUri = false;
             Uri serverUri = null;
 
             while (!validUri)
             {
-                MiscUtils.GetStringFromConsole("Please enter the Seafile server url", ref host);                
-                         
+                MiscUtils.GetStringFromConsole("Please enter the Seafile server url", ref host);
+
                 try
                 {
                     serverUri = new Uri(host, UriKind.Absolute);
                     validUri = true;
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     Console.WriteLine("Not a valid absolute url (Please include http or https)");
-                    host = "";
+                    host = string.Empty;
                 }
             }
-            
+
             MiscUtils.GetStringFromConsole("Please enter your username", ref user);
 
             // use secure string to retrieve the password from the user
-            SecureString pw;            
+            SecureString pw;
             do
             {
                 // repeat input                
-                Console.Write("Please enter your password (input will be hidden): ");                
-            } while (!SecureStringUtils.ReadPasswordFromConsole(out pw));            
+                Console.Write("Please enter your password (input will be hidden): ");
+            }
+            while (!SecureStringUtils.ReadPasswordFromConsole(out pw));
 
-            char[] pwBuf = SecureStringUtils.SecureStringToCharArray(pw);
-            pw.Dispose();            
+            var pwBuffer = SecureStringUtils.SecureStringToCharArray(pw);
+            pw.Dispose();
 
             // connect to the seafile server and retrieve some information
-            var t = SeafClientDemo(serverUri, user, pwBuf);
-            t.Wait();
+            var task = SeafClientDemo(serverUri, user, pwBuffer);
+            task.Wait();
 
             Console.WriteLine();
             Console.WriteLine("Press any key to quit.");
             Console.ReadKey();
         }
 
-        static async Task SeafClientDemo(Uri host, String user, char[] pw)
+        private static async Task SeafClientDemo(Uri host, string user, char[] pw)
         {
             try
             {
                 // if the seafile server uses a self-signed certificate we accept it
                 // for demonstration purposes
-                System.Net.ServicePointManager.ServerCertificateValidationCallback = (s, cert, chain, errors) =>
-                {
-                    return true;
-                };
+                ServicePointManager.ServerCertificateValidationCallback = (s, cert, chain, errors) => true;
 
                 // try to connect to the seafile server using the given credentials
                 Console.Write("Connecting...");
-                SeafSession session = await SeafSession.Establish(host, user, pw);
+                var session = await SeafSession.Establish(host, user, pw);
                 Console.WriteLine("OK");
-                Console.WriteLine();                                
-                
+                Console.WriteLine();
+
                 // ping the server
                 Console.Write("Pinging the server...");
                 if (await session.Ping())
@@ -90,36 +86,39 @@ namespace SeafConsole
                 Console.WriteLine("Account info: ");
                 Console.WriteLine("User name: " + info.Name);
                 Console.WriteLine("Space used: " + MiscUtils.FormatByteSize(info.Usage));
-                Console.WriteLine("Space total: " + (info.HasUnlimitedSpace ? "unlimited" : MiscUtils.FormatByteSize(info.Quota)));
+                Console.WriteLine("Space total: " +
+                                  (info.HasUnlimitedSpace ? "unlimited" : MiscUtils.FormatByteSize(info.Quota)));
                 Console.WriteLine("");
 
                 // create a test library
-                /*Console.Write("Creating library...");
-                var newLib = await session.CreateLibrary("TestLib", "123");
-                Console.WriteLine("OK");*/
+                // Console.Write("Creating library...");
+                // var newLib = await session.CreateLibrary("TestLib", "123");
+                // Console.WriteLine("OK");
 
                 // default library
-                SeafLibrary defLib = await session.GetDefaultLibrary();
+                var defLib = await session.GetDefaultLibrary();
                 Console.WriteLine("Default library: " + defLib.Name);
-                                
+
                 // retrieve user's libraries & shared libraries
                 var libs = await session.ListLibraries();
-                libs.Union(await session.ListSharedLibraries());
+                libs = libs.Union(await session.ListSharedLibraries()).ToList();
                 Console.WriteLine("Libraries:");
 
                 IList<string[]> lines = new List<string[]>();
-                lines.Add(new string[] { "Modified", "Permission", "Name", "Owner" });
+                lines.Add(new[] { "Modified", "Permission", "Name", "Owner" });
+
                 foreach (var lib in libs)
                 {
-                    string permission = lib.Permission == SeafClient.Types.SeafPermission.ReadOnly ? "r" : "rw";
-                    lines.Add(new string[] { lib.Timestamp.ToString(), permission, lib.Name, lib.Owner });
+                    var permission = lib.Permission == SeafPermission.ReadOnly ? "r" : "rw";
+                    lines.Add(new[] { lib.Timestamp.ToString(), permission, lib.Name, lib.Owner });
                 }
 
                 Console.WriteLine(MiscUtils.PadElementsInLines(lines, 2));
             }
-            catch(AggregateException ex)
+            catch (AggregateException ex)
             {
-                throw ex.InnerException;
+                if (ex.InnerException != null)
+                    throw ex.InnerException;
             }
             catch (SeafException ex)
             {
