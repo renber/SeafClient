@@ -22,6 +22,22 @@ namespace SeafClient
     {
         private readonly ISeafWebConnection _webConnection;
 
+
+        /// <summary>
+        /// The user this session belongs to
+        /// </summary>
+        public string Username { get; }
+
+        /// <summary>
+        /// The Uri of the seafile server
+        /// </summary>
+        public Uri ServerUri { get; }
+
+        /// <summary>
+        /// The session's authentication token
+        /// </summary>
+        public string AuthToken { get; }
+
         /// <summary>
         ///     Wraps an already existing seafile session
         ///     use SeafSession.Establish(...) to establish a new connection and retrieve an authentication token
@@ -38,15 +54,6 @@ namespace SeafClient
             ServerUri = serverUri;
             AuthToken = authToken;
         }
-
-        /// <summary>
-        ///     The user this session belongs to
-        /// </summary>
-        public string Username { get; }
-
-        public Uri ServerUri { get; }
-
-        public string AuthToken { get; }
 
         /// <summary>
         ///     Tries to connect to the given seafile server using the default ISeafWebConnection implementation and returns an
@@ -195,6 +202,18 @@ namespace SeafClient
         {
             var request = new GetServerInfoRequest();
             return await seafWebConnection.SendRequestAsync(serverUri, request);
+        }
+
+        /// <summary>
+        /// Send the given (custom) request to the Seafile server using the current session data
+        /// </summary>
+        /// <typeparam name="TResponse">The respons etype of the request</typeparam>
+        /// <param name="request">The request to send</param>
+        /// <param name="timeout">The request timeout (if any)</param>
+        /// <returns></returns>
+        public async Task<TResponse> SendRequest<TResponse>(SeafRequest<TResponse> request, TimeSpan? timeout = null)
+        {
+            return await _webConnection.SendRequestAsync(ServerUri, request, timeout);
         }
 
         /// <summary>
