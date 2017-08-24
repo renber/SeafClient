@@ -106,7 +106,10 @@ namespace SeafClient.Requests.Directories
                 if (entry.ParentDirectory == null)
                     entry.ParentDirectory = Path;
 
-                entry.Path = entry.ParentDirectory + entry.Name;
+                if (!entry.ParentDirectory.EndsWith("/"))
+                    entry.ParentDirectory += "/";
+
+            entry.Path = entry.ParentDirectory + entry.Name;
             }
 
             return entries;
