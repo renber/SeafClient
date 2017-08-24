@@ -18,6 +18,16 @@ namespace SeafClient
         /// Instantiate a SeafHttpConnection with default values
         /// </summary>
         public SeafHttpConnection()
+            : this(null)
+        {
+            // --
+        }
+
+        /// <summary>
+        /// Instantiate a SeafHttpConnection with a custom default timeout
+        /// </summary>
+        /// <param name="timeout">A custom timeout for all requests. When this is null the default timeout is used</param>
+        public SeafHttpConnection(TimeSpan? timeout)
         {
             // set-up the HttpClient instance we are going to use for sending requests
             // we use the same instance for the whole lifetime of the session
@@ -27,6 +37,8 @@ namespace SeafClient
             handler.AllowAutoRedirect = false;
 
             client = new HttpClient(handler);
+            if (timeout.HasValue)
+                client.Timeout = timeout.Value;
         }
 
         /// <summary>
