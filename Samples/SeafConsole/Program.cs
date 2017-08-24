@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using SeafClient;
 using SeafClient.Exceptions;
 using SeafClient.Types;
+using SeafClient.Requests.Directories;
 
 namespace SeafConsole
 {
@@ -112,8 +113,18 @@ namespace SeafConsole
                     var permission = lib.Permission == SeafPermission.ReadOnly ? "r" : "rw";
                     lines.Add(new[] { lib.Timestamp.ToString(), permission, lib.Name, lib.Owner });
                 }
-
                 Console.WriteLine(MiscUtils.PadElementsInLines(lines, 2));
+
+                // list directories recursively
+                var listDirsRequest = new ListDirectoryEntriesRequest(session.AuthToken, defLib.Id, "/", true);
+                var dirs = await session.SendRequest(listDirsRequest);
+
+                foreach(var d in dirs)
+                {
+                    Console.WriteLine(d.Path);
+                }
+
+                
             }
             catch (AggregateException ex)
             {

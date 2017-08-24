@@ -15,11 +15,23 @@ namespace SeafClient.Tests
             _responseCache = new Dictionary<Type, HttpResponseMessage>();
         }
 
-            return this;}
-        public void Close()
+        public async Task<T> SendRequestAsync<T>(Uri serverUri, SeafRequest<T> request)
         {
-            // nothing to do
+            HttpResponseMessage response;
+
+            if (!_responseCache.TryGetValue(request.GetType(), out response))
+                throw new Exception("No mocked response for the request available.");
+
+            if (request.WasSuccessful(response))
+                return await request.ParseResponseAsync(response);
+
+            throw new SeafException(request.GetSeafError(response));
         }
+
+        public async Task<T> SendRequestAsync<T>(Uri serverUri, SeafRequest<T> request, TimeSpan? timeout)
+        {
+            // timeout is not supported
+            return await SendRequestAsync(serverUri, request);
         }
 
         public MockedSeafConnection FakeResponseFor<T>(HttpResponseMessage responseMessage) where T : ISeafRequest
@@ -28,10 +40,9 @@ namespace SeafClient.Tests
             return this;
         }
 
-        public async Task<T> SendRequestAsync<T>(Uri serverUri, SeafRequest<T> request, TimeSpan? timeout)
+        public void Close()
         {
-            // timeout is not supported
-            return await SendRequestAsync(serverUri, request);
+            // nothing to do
         }
     }
 }
