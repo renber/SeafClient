@@ -19,7 +19,8 @@ namespace SeafClient.Types
         NotEnoughPermissions,
         InvalidLibraryPassword,
         LibraryIsNotEncrypted,
-        ProtocolError
+        ProtocolError,
+        TooManyRequests
     }
 
     /// <summary>
@@ -71,6 +72,8 @@ namespace SeafClient.Types
                     return "The provided password is invalid.";
                 case SeafErrorCode.LibraryIsNotEncrypted:
                     return "The library decryption request failed, since the library is not encrypted.";
+                case SeafErrorCode.TooManyRequests:
+                    return "The server returned TooManyRequests. Please wait before continuing sending requests.";
                 default:
                     // print the http status code
                     return _httpStatusDescription;

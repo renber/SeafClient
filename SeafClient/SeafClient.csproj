@@ -58,6 +58,7 @@
     <Compile Include="Converters\SeafEntryTypeConverter.cs" />
     <Compile Include="Converters\SeafPermissionConverter.cs" />
     <Compile Include="Converters\SeafTimestampConverter.cs" />
+    <Compile Include="Exceptions\SeafTooManyRequestsException.cs" />
     <Compile Include="ISeafRequest.cs" />
     <Compile Include="ISeafWebConnection.cs" />
     <Compile Include="Requests\Files\GetFileDetailRequest.cs" />

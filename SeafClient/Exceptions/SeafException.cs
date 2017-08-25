@@ -4,7 +4,7 @@ using SeafClient.Types;
 namespace SeafClient.Exceptions
 {
     /// <summary>
-    ///     An <see cref="Exception"/> in the seafile web api implementation
+    /// An <see cref="Exception"/> in the seafile web api implementation
     /// </summary>
     public class SeafException : Exception
     {

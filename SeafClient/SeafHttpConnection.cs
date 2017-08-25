@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using SeafClient.Exceptions;
 using SeafClient.Utils;
+using System.Collections.Generic;
 
 namespace SeafClient
 {
@@ -107,7 +109,26 @@ namespace SeafClient
             if (request.WasSuccessful(response))
                 return await request.ParseResponseAsync(response);
             else
-                throw new SeafException(request.GetSeafError(response));
+                throw GetSeafException(request, response);                
+        }
+
+        SeafException GetSeafException<T>(SeafRequest<T> request, HttpResponseMessage response)
+        {
+            if (response.StatusCode == (System.Net.HttpStatusCode)429) // TooManyRequests
+            {
+                IEnumerable<string> values;
+                if (response.Headers.TryGetValues("X-Throttle-Wait-Seconds", out values))                    
+                {
+                    int seconds;
+                    if (int.TryParse(values.First(), out seconds))
+                        return new SeafTooManyRequestsException(TimeSpan.FromSeconds(seconds));
+                }
+
+                // could not read the wait header
+                return new SeafTooManyRequestsException(TimeSpan.FromSeconds(30));
+
+            } else
+                return new SeafException(request.GetSeafError(response));
         }
 
         /// <summary>
