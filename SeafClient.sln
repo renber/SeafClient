@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.15
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SeafClient", "SeafClient\SeafClient.csproj", "{D3B1E98F-16CD-4A9F-86C9-E6292117619E}"
 EndProject
@@ -77,5 +77,8 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{AE20190A-E6D9-4F2A-982E-F5BF1CA77CD2} = {4F20BAA1-F76E-47AE-A3D6-2A1A9614738C}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {893FC8E8-955F-4D66-BBF6-9898CA854ACD}
 	EndGlobalSection
 EndGlobal
