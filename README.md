@@ -88,4 +88,5 @@ See the [official Seafile Web API documentation](http://manual.seafile.com/devel
 * Get Upload Link / Upload file
 * Get Update link / Update file
 * Starred files (list / star / unstar)
+* Groups (list / create / delete)
 * Decrypt an encrypted library (allowing to download files from the encrypted library)
