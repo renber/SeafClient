@@ -19,8 +19,7 @@ namespace SeafClient.Types
         public virtual string Name { get; set; }
 
         /// <summary>
-        ///     Time of the last modification of this entry
-        ///     (as UNIX timestamp)
+        /// Time of the last modification of this entry
         /// </summary>
         [JsonProperty("mtime")]
         [JsonConverter(typeof(SeafTimestampConverter))]

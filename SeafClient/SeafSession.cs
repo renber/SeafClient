@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using SeafClient.Requests;
 using SeafClient.Requests.Directories;
 using SeafClient.Requests.Files;
+using SeafClient.Requests.Groups;
 using SeafClient.Requests.Libraries;
 using SeafClient.Requests.StarredFiles;
 using SeafClient.Requests.UserAccountInfo;
@@ -974,6 +976,60 @@ namespace SeafClient
         public async Task<bool> UnstarFile(SeafDirEntry dirEntry)
         {
             var request = new UnstarFileRequest(AuthToken, dirEntry.LibraryId, dirEntry.Path);
+            return await _webConnection.SendRequestAsync(ServerUri, request);
+        }
+
+        /// <summary>
+        /// Lists all groups
+        /// </summary>
+        /// <returns></returns>
+        public async Task<SeafGroupList> ListGroups()
+        {
+            var request = new ListGroupsRequest(AuthToken);
+            return await _webConnection.SendRequestAsync(ServerUri, request);
+        }
+
+        /// <summary>
+        /// Return the group information for the group with the given ID
+        /// </summary>
+        /// <param name="groupId"></param>
+        /// <returns></returns>
+        public async Task<SeafGroup> GetGroupInfo(int groupId)
+        {
+            // currently there is no way to retrieve information
+            // for a single group, so get a list of all and extract the
+            // required group
+            var groups = await ListGroups();
+            return groups.FirstOrDefault(x => x.Id == groupId);
+        }
+
+        /// <summary>
+        /// Creates a new group with the given name and returns the group object
+        /// </summary>
+        /// <param name="groupName"></param>
+        /// <returns></returns>
+        public async Task<SeafGroup> AddGroup(String groupName)
+        {
+            var request = new AddGroupRequest(AuthToken, groupName);
+            int groupId = await _webConnection.SendRequestAsync(ServerUri, request);            
+            return await GetGroupInfo(groupId);
+        }
+
+        /// <summary>
+        /// Deletes the group from the server
+        /// </summary>
+        /// <param name="group"></param>
+        public async Task<bool> DeleteGroup(SeafGroup group)
+        {
+            return await DeleteGroup(group.Id);
+        }
+
+        /// <summary>
+        /// Deletes the group which the specified group id from the server
+        /// </summary>
+        public async Task<bool> DeleteGroup(int groupId)
+        {
+            var request = new DeleteGroupRequest(AuthToken, groupId);
             return await _webConnection.SendRequestAsync(ServerUri, request);
         }
 

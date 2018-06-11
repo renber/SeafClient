@@ -10,7 +10,7 @@ namespace SeafClient.Utils
     internal static class HttpUtils
     {
         /// <summary>
-        ///     Sends a HTTP GET request to the given URI
+        ///     Creates an HTTP GET request to the given URI
         /// </summary>
         /// <param name="method">The HTTP method</param>
         /// <param name="uri">The uri to get</param>
@@ -28,7 +28,7 @@ namespace SeafClient.Utils
         }
 
         /// <summary>
-        ///     Sends a HTTP POST request to the given URI
+        ///     Creates an HTTP POST request to the given URI
         /// </summary>
         /// <param name="uri">The uri to post to</param>
         /// <param name="headerInfo">Additional headers to be added to the HTTP POST request</param>
@@ -43,6 +43,26 @@ namespace SeafClient.Utils
                 message.Headers.Add(hi.Key, hi.Value);
 
             message.Content = new FormUrlEncodedContent(postParams);
+            
+            return message;
+        }
+
+        /// <summary>
+        ///     Creates an HTTP PUT request to the given URI
+        /// </summary>
+        /// <param name="uri">The uri to post to</param>
+        /// <param name="headerInfo">Additional headers to be added to the HTTP POST request</param>
+        /// <param name="postParams">Post parameters</param>
+        /// <returns>The http response</returns>
+        public static HttpRequestMessage CreatePutRequest(Uri uri, IEnumerable<KeyValuePair<string, string>> headerInfo, IEnumerable<KeyValuePair<string, string>> putParams)
+        {
+            var message = new HttpRequestMessage(HttpMethod.Put, uri);
+            message.Headers.Referrer = uri;
+
+            foreach (var hi in headerInfo)
+                message.Headers.Add(hi.Key, hi.Value);
+
+            message.Content = new FormUrlEncodedContent(putParams);
 
             return message;
         }

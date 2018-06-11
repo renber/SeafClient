@@ -85,7 +85,7 @@ namespace SeafClient.Requests.Files
         {
             string boundary = "Upload---------" + Guid.NewGuid().ToString();
 
-            var request = new HttpRequestMessage(HttpMethod.Post, UploadUri);
+            var request = new HttpRequestMessage(HttpMethod.Post, UploadUri);            
 
             foreach (var hi in GetAdditionalHeaders())
                 request.Headers.Add(hi.Key, hi.Value);
@@ -100,7 +100,7 @@ namespace SeafClient.Requests.Files
                 {
                     if (UploadProgress != null)
                         UploadProgress(p);
-                });
+                });                                
                 fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
                 fileContent.Headers.TryAddWithoutValidation("Content-Disposition", String.Format("form-data; name=\"file\"; filename=\"{0}\"", f.Filename));
 
@@ -117,9 +117,8 @@ namespace SeafClient.Requests.Files
             dirContent.Headers.TryAddWithoutValidation("Content-Disposition", @"form-data; name=""parent_dir""");
             content.Add(dirContent);
 
-            // transmit the content length, for this we use the private method TryComputeLength() called by reflection
+            // transmit the content length
             long conLen;
-
             if (!content.ComputeLength(out conLen))
                 conLen = 0;
 
@@ -128,8 +127,7 @@ namespace SeafClient.Requests.Files
             // and remove the actual content-type which uses quotes beforehand
             content.Headers.ContentType = null;
             content.Headers.TryAddWithoutValidation("Content-Type", "multipart/form-data; boundary=" + boundary);
-
-            //client.DefaultRequestHeaders.TransferEncodingChunked = true;                
+                        
             if (conLen > 0)
             {
                 // in order to disable buffering

@@ -37,8 +37,8 @@ namespace SeafClient
         }
 
         /// <summary>
-        ///     Return the parameters to use when posting this command
-        ///     (only used if HttpAccessMethod is Post)
+        ///     Return the parameters to use when posting (or putting) this command
+        ///     (only used if HttpAccessMethod is Post or Put)
         /// </summary>
         /// <returns></returns>
         public virtual IEnumerable<KeyValuePair<string, string>> GetPostParameters()
@@ -124,6 +124,11 @@ namespace SeafClient
         ///     The request has to be sent with an HTTP POST request
         /// </summary>
         Post,
+
+        /// <summary>
+        ///     The request has to be sent with an HTTP PUT request
+        /// </summary>
+        Put,
 
         /// <summary>
         ///     The request has to be sent with an HTTP DELETE request

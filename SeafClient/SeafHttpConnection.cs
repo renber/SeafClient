@@ -40,7 +40,7 @@ namespace SeafClient
 
             client = new HttpClient(handler);
             if (timeout.HasValue)
-                client.Timeout = timeout.Value;
+                client.Timeout = timeout.Value;            
         }
 
         /// <summary>
@@ -60,6 +60,9 @@ namespace SeafClient
                     return HttpUtils.CreateSimpleRequest(HttpMethod.Get, targetUri, request.GetAdditionalHeaders());
                 case HttpAccessMethod.Post:
                     return HttpUtils.CreatePostRequest(targetUri, request.GetAdditionalHeaders(),
+                        request.GetPostParameters());
+                case HttpAccessMethod.Put:
+                    return HttpUtils.CreatePutRequest(targetUri, request.GetAdditionalHeaders(),
                         request.GetPostParameters());
                 case HttpAccessMethod.Delete:
                     return HttpUtils.CreateSimpleRequest(HttpMethod.Delete, targetUri, request.GetAdditionalHeaders());
