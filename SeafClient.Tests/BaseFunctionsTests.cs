@@ -148,6 +148,15 @@ namespace SeafClient.Tests
         [TestMethod]
         public void Test_SessionFromToken()
         {
+            var serverInfoMessage = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(@"{
+                                            ""version"": ""4.0.6"",
+                                            ""features"": [
+                                            ""seafile-basic"",
+                                            ]}")
+            };
+
             // From Token automatically checks the token using the CheckAccountInfo() command
             var message = new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -155,7 +164,8 @@ namespace SeafClient.Tests
             };
 
             var mockedConnection = new MockedSeafConnection();
-            mockedConnection.FakeResponseFor<AccountInfoRequest>(message);
+            mockedConnection.FakeResponseFor<GetServerInfoRequest>(serverInfoMessage);
+            mockedConnection.FakeResponseFor<AccountInfoRequest>(message);            
             var session = ExecuteSync(() => SeafSession.FromToken(mockedConnection, new Uri("http://www.example.com"), FakeToken));
 
             Assert.IsNotNull(session);
@@ -166,7 +176,7 @@ namespace SeafClient.Tests
         [TestMethod]
         public void Test_SessionFromUsernameAndToken()
         {
-            var session = SeafSession.FromToken(new Uri("http://www.example.com"), "user@example.com", FakeToken);
+            var session = SeafSession.FromToken(new Uri("http://www.example.com"), "user@example.com", FakeToken, FakeServerVersion);
 
             Assert.IsNotNull(session);
             Assert.AreEqual(FakeToken, session.AuthToken);

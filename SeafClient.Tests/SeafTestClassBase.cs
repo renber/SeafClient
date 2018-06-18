@@ -15,6 +15,7 @@ namespace SeafClient.Tests
             FakeToken = "24fd3c026886e3121b2ca630805ed425c272cb96";
             FakeRepoId = "632ab8a8-ecf9-4435-93bf-f495d5bfe975";
             TestConnection = new SeafHttpConnection();
+            FakeServerVersion = new Version(6, 0, 0);
         }
 
         public Uri DummyServerUri { get; }
@@ -22,6 +23,8 @@ namespace SeafClient.Tests
         public string FakeToken { get; }
 
         public string FakeRepoId { get; }
+
+        public Version FakeServerVersion { get; }
 
         public SeafHttpConnection TestConnection { get; }
 
