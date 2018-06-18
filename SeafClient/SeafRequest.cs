@@ -15,16 +15,13 @@ namespace SeafClient
     /// </summary>
     public abstract class SeafRequest<TResponse> : ISeafRequest
     {
-        /// <summary>
-        ///     The command uri for this command
-        /// </summary>
         public abstract string CommandUri { get; }
 
         /// <summary>
         ///     The http method to execute this command with
         ///     (default is GET)
         /// </summary>
-        public virtual HttpAccessMethod HttpAccessMethod => HttpAccessMethod.Get;
+        public virtual HttpAccessMethod HttpAccessMethod => HttpAccessMethod.Get;        
 
         /// <summary>
         ///     Get additional header values to send with this command
@@ -37,11 +34,11 @@ namespace SeafClient
         }
 
         /// <summary>
-        ///     Return the parameters to use when posting (or putting) this command
-        ///     (only used if HttpAccessMethod is Post or Put)
+        ///     Return the parameters which should be encoded in the message nody                
+        ///     (usually, only used if HttpAccessMethod is Post or Put)
         /// </summary>
         /// <returns></returns>
-        public virtual IEnumerable<KeyValuePair<string, string>> GetPostParameters()
+        public virtual IEnumerable<KeyValuePair<string, string>> GetBodyParameters()
         {
             yield break;
         }
@@ -78,6 +75,14 @@ namespace SeafClient
                 default:
                     return new SeafError(msg.StatusCode, SeafErrorCode.NoDetails);
             }
+        }
+
+        /// <summary>
+        /// Indicates whether this request is supported by a seafile server with the given version or not
+        /// </summary>        
+        public virtual bool SupportedWithServerVersion(Version version)
+        {
+            return true;
         }
 
         /// <summary>

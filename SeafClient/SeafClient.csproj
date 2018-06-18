@@ -62,9 +62,13 @@
     <Compile Include="ISeafRequest.cs" />
     <Compile Include="ISeafWebConnection.cs" />
     <Compile Include="Requests\Files\GetFileDetailRequest.cs" />
+    <Compile Include="Requests\Groups\AddGroupMemberRequest.cs" />
     <Compile Include="Requests\Groups\AddGroupRequest.cs" />
     <Compile Include="Requests\Groups\DeleteGroupRequest.cs" />
+    <Compile Include="Requests\Groups\ListGroupMembersRequest.cs" />
     <Compile Include="Requests\Groups\ListGroupsRequest.cs" />
+    <Compile Include="Requests\Groups\RemoveGroupMemberRequest.cs" />
+    <Compile Include="Requests\Groups\RenameGroupRequest.cs" />
     <Compile Include="Requests\Libraries\CreateLibraryRequest.cs" />
     <Compile Include="Requests\Libraries\GetDefaultLibraryRequest.cs" />
     <Compile Include="Requests\Libraries\GetLibraryInfoRequest.cs" />

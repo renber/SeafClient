@@ -34,7 +34,7 @@ namespace SeafClient.Requests.Groups
             GroupName = groupName;
         }
 
-        public override IEnumerable<KeyValuePair<string, string>> GetPostParameters()
+        public override IEnumerable<KeyValuePair<string, string>> GetBodyParameters()
         {
             yield return new KeyValuePair<string, string>("group_name", GroupName);
         }

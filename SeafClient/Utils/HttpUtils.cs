@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Net.Http;
 
@@ -16,7 +17,7 @@ namespace SeafClient.Utils
         /// <param name="uri">The uri to get</param>
         /// <param name="headerInfo">Additional headers to be added to the HTTP GET request</param>
         /// <returns>The http response</returns>
-        public static HttpRequestMessage CreateSimpleRequest(HttpMethod method, Uri uri, IEnumerable<KeyValuePair<string, string>> headerInfo)
+        public static HttpRequestMessage CreateRequest(HttpMethod method, Uri uri, IEnumerable<KeyValuePair<string, string>> headerInfo, IEnumerable<KeyValuePair<string, string>> bodyParams)
         {
             var message = new HttpRequestMessage(method, uri);
             message.Headers.Referrer = uri;
@@ -24,47 +25,12 @@ namespace SeafClient.Utils
             foreach (var hi in headerInfo)
                 message.Headers.Add(hi.Key, hi.Value);
 
-            return message;
-        }
-
-        /// <summary>
-        ///     Creates an HTTP POST request to the given URI
-        /// </summary>
-        /// <param name="uri">The uri to post to</param>
-        /// <param name="headerInfo">Additional headers to be added to the HTTP POST request</param>
-        /// <param name="postParams">Post parameters</param>
-        /// <returns>The http response</returns>
-        public static HttpRequestMessage CreatePostRequest(Uri uri, IEnumerable<KeyValuePair<string, string>> headerInfo, IEnumerable<KeyValuePair<string, string>> postParams)
-        {
-            var message = new HttpRequestMessage(HttpMethod.Post, uri);
-            message.Headers.Referrer = uri;
-
-            foreach (var hi in headerInfo)
-                message.Headers.Add(hi.Key, hi.Value);
-
-            message.Content = new FormUrlEncodedContent(postParams);
-            
-            return message;
-        }
-
-        /// <summary>
-        ///     Creates an HTTP PUT request to the given URI
-        /// </summary>
-        /// <param name="uri">The uri to post to</param>
-        /// <param name="headerInfo">Additional headers to be added to the HTTP POST request</param>
-        /// <param name="postParams">Post parameters</param>
-        /// <returns>The http response</returns>
-        public static HttpRequestMessage CreatePutRequest(Uri uri, IEnumerable<KeyValuePair<string, string>> headerInfo, IEnumerable<KeyValuePair<string, string>> putParams)
-        {
-            var message = new HttpRequestMessage(HttpMethod.Put, uri);
-            message.Headers.Referrer = uri;
-
-            foreach (var hi in headerInfo)
-                message.Headers.Add(hi.Key, hi.Value);
-
-            message.Content = new FormUrlEncodedContent(putParams);
+            if (bodyParams.Any())
+            {
+                message.Content = new FormUrlEncodedContent(bodyParams);
+            }
 
             return message;
-        }
+        }        
     }
 }

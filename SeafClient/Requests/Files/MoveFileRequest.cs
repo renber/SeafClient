@@ -27,9 +27,9 @@ namespace SeafClient.Requests.Files
             get { return HttpAccessMethod.Post; }
         }
 
-        public override IEnumerable<KeyValuePair<string, string>> GetPostParameters()
+        public override IEnumerable<KeyValuePair<string, string>> GetBodyParameters()
         {
-            foreach (var p in base.GetPostParameters())
+            foreach (var p in base.GetBodyParameters())
                 yield return p;
 
             yield return new KeyValuePair<string, string>("operation", "move");

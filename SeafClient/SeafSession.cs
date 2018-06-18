@@ -41,6 +41,11 @@ namespace SeafClient
         public string AuthToken { get; }
 
         /// <summary>
+        /// The version of the server this session is connected to
+        /// </summary>
+        public Version ServerVersion { get; private set; }
+
+        /// <summary>
         ///     Wraps an already existing seafile session
         ///     use SeafSession.Establish(...) to establish a new connection and retrieve an authentication token
         ///     from the Seafile server
@@ -49,12 +54,13 @@ namespace SeafClient
         /// <param name="username">The username of the account authToken belongs to</param>
         /// <param name="serverUri">The server url to connect to (including protocol (http or https) and port)</param>
         /// <param name="authToken">The authentication token as received from the Seafile server</param>
-        private SeafSession(ISeafWebConnection seafWebConnection, string username, Uri serverUri, string authToken)
+        private SeafSession(ISeafWebConnection seafWebConnection, string username, Uri serverUri, string authToken, Version serverVersion)
         {
             _webConnection = seafWebConnection;
             Username = username;
             ServerUri = serverUri;
             AuthToken = authToken;
+            ServerVersion = serverVersion;
         }
 
         /// <summary>
@@ -98,7 +104,20 @@ namespace SeafClient
             var request = new AuthRequest(username, pwd);
             var response = await seafWebConnection.SendRequestAsync(serverUri, request);
 
-            return new SeafSession(seafWebConnection, username, serverUri, response.Token);
+            // get the server version
+            Version v = new Version(0, 0, 0);
+            try
+            {
+                var verResponse = await GetServerInfo(seafWebConnection, serverUri);
+                if (!Version.TryParse(verResponse.Version, out v))
+                    v = new Version(0, 0, 0);
+            }
+            catch (Exception e)
+            {
+                v = new Version(0, 0, 0);
+            }
+
+            return new SeafSession(seafWebConnection, username, serverUri, response.Token, v);
         }
 
         /// <summary>
@@ -129,25 +148,38 @@ namespace SeafClient
             var infoRequest = new AccountInfoRequest(authToken);
             var accInfo = await seafWebConnection.SendRequestAsync(serverUri, infoRequest);
 
-            return new SeafSession(seafWebConnection, accInfo.Email, serverUri, authToken);
+            // get the server version
+            Version v = new Version(0, 0, 0);
+            try
+            {                
+                var verResponse = await GetServerInfo(seafWebConnection, serverUri);
+                if (!Version.TryParse(verResponse.Version, out v))
+                    v = new Version(0, 0, 0);
+            }
+            catch (Exception e)
+            {
+                v = new Version(0, 0, 0);
+            }
+
+            return new SeafSession(seafWebConnection, accInfo.Email, serverUri, authToken, v);
         }
 
         /// <summary>
         ///     Create a seafile session for the given username and authentication token
-        ///     The validity of the username or token are not checked
+        ///     The validity of the username, token or server version are not checked
         ///     (if they are wrong you may not be able to execute requests)
         /// </summary>
-        public static SeafSession FromToken(Uri serverUri, string username, string authToken)
+        public static SeafSession FromToken(Uri serverUri, string username, string authToken, Version serverVersion)
         {
-            return FromToken(SeafConnectionFactory.GetDefaultConnection(), serverUri, username, authToken);
+            return FromToken(SeafConnectionFactory.GetDefaultConnection(), serverUri, username, authToken, serverVersion);
         }
 
         /// <summary>
         ///     Create a seafile session for the given username and authentication token using the given ISeafWebConnection
-        ///     The validity of the username or token are not checked
+        ///     The validity of the username, token or server version are not checked
         ///     (if they are wrong you may not be able to execute requests)
         /// </summary>
-        public static SeafSession FromToken(ISeafWebConnection seafWebConnection, Uri serverUri, string username, string authToken)
+        public static SeafSession FromToken(ISeafWebConnection seafWebConnection, Uri serverUri, string username, string authToken, Version serverVersion)
         {
             if (seafWebConnection == null)
                 throw new ArgumentNullException(nameof(seafWebConnection));
@@ -158,7 +190,7 @@ namespace SeafClient
             if (authToken == null)
                 throw new ArgumentNullException(nameof(authToken));
 
-            return new SeafSession(seafWebConnection, username, serverUri, authToken);
+            return new SeafSession(seafWebConnection, username, serverUri, authToken, serverVersion);
         }
 
         /// <summary>
@@ -980,7 +1012,7 @@ namespace SeafClient
         }
 
         /// <summary>
-        /// Lists all groups
+        /// Lists all groups       
         /// </summary>
         /// <returns></returns>
         public async Task<SeafGroupList> ListGroups()
@@ -1016,6 +1048,23 @@ namespace SeafClient
         }
 
         /// <summary>
+        /// Changes the name of the given group to newName
+        /// </summary>                
+        public async Task<bool> RenameGroup(SeafGroup group, String newName)
+        {
+            return await RenameGroup(group.Id, newName);
+        }
+
+        /// <summary>
+        /// Changes the name of the group with the given id to newName
+        /// </summary>                
+        public async Task<bool> RenameGroup(int groupId, String newName)
+        {
+            var request = new RenameGroupRequest(AuthToken, groupId, newName);
+            return await _webConnection.SendRequestAsync(ServerUri, request);
+        }
+
+        /// <summary>
         /// Deletes the group from the server
         /// </summary>
         /// <param name="group"></param>
@@ -1031,6 +1080,101 @@ namespace SeafClient
         {
             var request = new DeleteGroupRequest(AuthToken, groupId);
             return await _webConnection.SendRequestAsync(ServerUri, request);
+        }
+
+        /// <summary>
+        /// List the members of the given group
+        /// Only supported for Seafile server version 5.1.0+
+        /// </summary>        
+        public async Task<List<AccountInfo>> ListGroupMembers(SeafGroup group)
+        {
+            return await ListGroupMembers(group.Id);
+        }
+
+        /// <summary>
+        /// List the members of the group with the given id
+        /// Only supported for Seafile server version 5.1.0+
+        /// </summary>        
+        public async Task<List<AccountInfo>> ListGroupMembers(int groupId)
+        {
+            var request = new ListGroupMembersRequest(AuthToken, groupId);
+            CheckRequestSupportedByServer(request);
+
+            return await _webConnection.SendRequestAsync(ServerUri, request);
+        }
+
+        /// <summary>
+        /// Adds the given user as member to the group
+        /// </summary>
+        /// <param name="group">The group to add the user to</param>
+        /// <param name="userAccount">The user to add</param>
+        /// <returns></returns>
+        public async Task<bool> AddGroupMember(SeafGroup group, AccountInfo userAccount)
+        {
+            return await AddGroupMember(group.Id, userAccount.Email);
+        }
+
+        /// <summary>
+        /// Adds the user as member to the group
+        /// </summary>
+        /// <param name="group">The group to add the user to</param>
+        /// <param name="userName">The login name of the user to add (i.e. the e-mail address)</param>
+        /// <returns></returns>
+        public async Task<bool> AddGroupMember(SeafGroup group, string userName)
+        {
+            return await AddGroupMember(group.Id, userName);
+        }
+
+        /// <summary>
+        /// Adds the user as member to the group with the given id
+        /// </summary>
+        /// <param name="group">The group id of the group to add the user to</param>
+        /// <param name="userName">The login name of the user to add (i.e. the e-mail address)</param>
+        /// <returns></returns>
+        public async Task<bool> AddGroupMember(int groupId, string userName)
+        {
+            var request = new AddGroupMemberRequest(AuthToken, groupId, userName);
+            return await _webConnection.SendRequestAsync(ServerUri, request);
+        }
+
+        /// <summary>
+        /// Removes the given user from the group
+        /// </summary>
+        /// <param name="group">The group to remove the user from</param>
+        /// <param name="userAccount">The user to remove</param>
+        /// <returns></returns>
+        public async Task<bool> RemoveGroupMember(SeafGroup group, AccountInfo userAccount)
+        {
+            return await RemoveGroupMember(group.Id, userAccount.Email);
+        }
+
+        /// <summary>
+        /// Removes the user from the group
+        /// </summary>
+        /// <param name="group">The group to remove the user from</param>
+        /// <param name="userName">The login name of the user to remove (i.e. the e-mail address)</param>
+        /// <returns></returns>
+        public async Task<bool> RemoveGroupMember(SeafGroup group, string userName)
+        {
+            return await RemoveGroupMember(group.Id, userName);
+        }
+
+        /// <summary>
+        /// Removes the user from the group with the given id
+        /// </summary>
+        /// <param name="group">The group id of the group to remove the user from</param>
+        /// <param name="userName">The login name of the user to remove (i.e. the e-mail address)</param>
+        /// <returns></returns>
+        public async Task<bool> RemoveGroupMember(int groupId, string userName)
+        {
+            var request = new RemoveGroupMemberRequest(AuthToken, groupId, userName);
+            return await _webConnection.SendRequestAsync(ServerUri, request);
+        }
+
+        private void CheckRequestSupportedByServer(ISeafRequest request)
+        {
+            if (request.SupportedWithServerVersion(ServerVersion))            
+                throw new InvalidOperationException("The request is not supportd by a server with version " + ServerVersion.ToString());            
         }
 
         /// <summary>

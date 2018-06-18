@@ -8,6 +8,10 @@ using SeafClient;
 using SeafClient.Exceptions;
 using SeafClient.Types;
 using SeafClient.Requests.Directories;
+using System.IO;
+using System.Net.Http;
+using System.Reflection;
+using SeafClient.Requests.Groups;
 
 namespace SeafConsole
 {
@@ -16,8 +20,8 @@ namespace SeafConsole
         private static void Main()
         {
             // prompt the user for seafile server, username & password
-            var host = string.Empty;
-            var user = string.Empty;
+            var host = "https://raspsea.my-homeip.de:48000";
+            var user = "seafile_test@genie-soft.de";
 
             var validUri = false;
             Uri serverUri = null;
@@ -96,9 +100,47 @@ namespace SeafConsole
                 // var newLib = await session.CreateLibrary("TestLib", "123");
                 // Console.WriteLine("OK");
 
+                // groups
+                Console.WriteLine("Groups:");
+                var groupList = await session.ListGroups();
+                foreach(var g in groupList)
+                {
+                    Console.WriteLine(String.Format("{0:d} {1}", g.Id, g.Name));
+                }
+
+                if (groupList.Count > 0)
+                {
+                    var group = groupList.First();
+
+                    //await session.AddGroupMember(group, "seafile_rene@genie-soft.de");
+                    //Console.WriteLine("added user to group");
+
+                    var request = new ListGroupMembersRequest(session.AuthToken, group.Id, 120);
+                    var members = await session.SendRequest(request);
+                    Console.WriteLine("Group members:");
+                    foreach(var m in members)
+                    {
+                        Console.WriteLine("  " + m.Name + " " + m.Email);
+                    }
+
+                    //await session.RemoveGroupMember(group, "seafile_rene@genie-soft.de");
+                    //Console.WriteLine("removed user from group");
+
+                    //await session.DeleteGroup(group);
+                    //Console.WriteLine("deleted group: " + group.Name);
+                    //await session.RenameGroup(group, "changed name");
+                    //Console.WriteLine("renamed group");
+                }
+                else
+                {
+                    var group = await session.AddGroup("new group");
+                    Console.WriteLine("added group: " + group.Id + " - " + group.Name);
+                }                
+
                 // default library
                 var defLib = await session.GetDefaultLibrary();
                 Console.WriteLine("Default library: " + defLib.Name);
+                                
 
                 // retrieve user's libraries & shared libraries
                 var libs = await session.ListLibraries();

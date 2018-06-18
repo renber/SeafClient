@@ -55,21 +55,24 @@ namespace SeafClient
             var targetUri = new Uri(serverUri, request.CommandUri);
 
             switch (request.HttpAccessMethod)
-            {
-                case HttpAccessMethod.Get:
-                    return HttpUtils.CreateSimpleRequest(HttpMethod.Get, targetUri, request.GetAdditionalHeaders());
-                case HttpAccessMethod.Post:
-                    return HttpUtils.CreatePostRequest(targetUri, request.GetAdditionalHeaders(),
-                        request.GetPostParameters());
-                case HttpAccessMethod.Put:
-                    return HttpUtils.CreatePutRequest(targetUri, request.GetAdditionalHeaders(),
-                        request.GetPostParameters());
-                case HttpAccessMethod.Delete:
-                    return HttpUtils.CreateSimpleRequest(HttpMethod.Delete, targetUri, request.GetAdditionalHeaders());
+            {                                    
                 case HttpAccessMethod.Custom:
                     return request.GetCustomizedRequest(serverUri);
                 default:
-                    throw new ArgumentException("Unsupported method: " + request.HttpAccessMethod);
+                    return HttpUtils.CreateRequest(GetHttpMethod(request.HttpAccessMethod), targetUri, request.GetAdditionalHeaders(), request.GetBodyParameters());                    
+            }
+        }
+
+        static HttpMethod GetHttpMethod(HttpAccessMethod accessMethod)
+        {
+            switch (accessMethod)
+            {
+                case HttpAccessMethod.Get: return HttpMethod.Get;
+                case HttpAccessMethod.Post: return HttpMethod.Post;
+                case HttpAccessMethod.Put: return HttpMethod.Put;
+                case HttpAccessMethod.Delete: return HttpMethod.Delete;
+                default:
+                    throw new ArgumentException("HttpAccessMethod " + accessMethod.ToString() + " is not supported");
             }
         }
        

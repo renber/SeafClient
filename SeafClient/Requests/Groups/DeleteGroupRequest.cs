@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SeafClient.Requests.Groups
 {
-    class DeleteGroupRequest : SessionRequest<bool>
+    public class DeleteGroupRequest : SessionRequest<bool>
     {
         public override string CommandUri => String.Format("api2/groups/{0:d}/", GroupId);
 
