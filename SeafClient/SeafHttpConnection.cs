@@ -46,7 +46,7 @@ namespace SeafClient
             // we use the same instance for the whole lifetime of the session
             // since this is recommended by Microsoft
             // (see https://docs.microsoft.com/en-us/aspnet/web-api/overview/advanced/calling-a-web-api-from-a-net-client)
-            client = new HttpClient(handler);
+            client = new HttpClient(handler ?? throw new ArgumentNullException(nameof(handler)));
             if (timeout.HasValue)
                 client.Timeout = timeout.Value;
         }
