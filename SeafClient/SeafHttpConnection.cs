@@ -14,7 +14,7 @@ namespace SeafClient
     /// </summary>
     public class SeafHttpConnection : ISeafWebConnection
     {
-        HttpClient client;
+        protected HttpClient client;
         
 		/// <summary>
         /// Instantiate a SeafHttpConnection with default values
@@ -30,17 +30,25 @@ namespace SeafClient
         /// </summary>
         /// <param name="timeout">A custom timeout for all requests. When this is null the default timeout is used</param>
         public SeafHttpConnection(TimeSpan? timeout)
+            : this(new HttpClientHandler() { AllowAutoRedirect = false }, timeout)
+        {            
+            // --
+        }
+
+        /// <summary>
+        /// Instantiate a SeafHttpConnection using the given HttpClientHandler with a custom default timeout
+        /// </summary>
+        /// <param name="handler">A custom HttpClientHandler to use for request handling</param>
+        /// <param name="timeout">A custom timeout for all requests. When this is null the default timeout is used</param>
+        public SeafHttpConnection(HttpClientHandler handler, TimeSpan? timeout)
         {
             // set-up the HttpClient instance we are going to use for sending requests
             // we use the same instance for the whole lifetime of the session
             // since this is recommended by Microsoft
             // (see https://docs.microsoft.com/en-us/aspnet/web-api/overview/advanced/calling-a-web-api-from-a-net-client)
-            HttpClientHandler handler = new HttpClientHandler();
-            handler.AllowAutoRedirect = false;
-
             client = new HttpClient(handler);
             if (timeout.HasValue)
-                client.Timeout = timeout.Value;            
+                client.Timeout = timeout.Value;
         }
 
         /// <summary>
