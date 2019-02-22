@@ -1138,6 +1138,44 @@ namespace SeafClient
         }
 
         /// <summary>
+        /// Adds the given users as members to the given group
+        /// </summary>
+        /// <param name="group">The group to add the users to</param>
+        /// <param name="users">Users to add</param>
+        public async Task<BulkAddGroupMemberResponse> AddGroupMembers(SeafGroup group, IEnumerable<AccountInfo> users)
+        {
+            if (users == null) throw new ArgumentNullException(nameof(users));
+
+            return await AddGroupMembers(group, users.Select(x => x.Email));
+        }
+
+        /// <summary>
+        /// Adds the given users as members to the given group
+        /// </summary>
+        /// <param name="group">The group to add the users to</param>
+        /// <param name="usernames">The login names of the users to add (i.e. the e-mail addresses)</param>
+        public async Task<BulkAddGroupMemberResponse> AddGroupMembers(SeafGroup group, IEnumerable<string> usernames)
+        {
+            if (group == null) throw new ArgumentNullException(nameof(group));            
+
+            return await AddGroupMembers(group.Id, usernames);
+        }
+
+        /// <summary>
+        /// Adds the given users as members to the the group with the given id
+        /// </summary>
+        /// <param name="groupId">The id of the group to add the users to</param>
+        /// <param name="usernames">The login names of the users to add (i.e. the e-mail addresses)</param>
+        public async Task<BulkAddGroupMemberResponse> AddGroupMembers(int groupId, IEnumerable<string> usernames)
+        {
+            if (usernames == null) throw new ArgumentNullException(nameof(usernames));
+
+            BulkAddGroupMemberRequest request = new BulkAddGroupMemberRequest(AuthToken, groupId, usernames);
+            CheckRequestSupportedByServer(request);
+            return await _webConnection.SendRequestAsync(ServerUri, request);
+        }
+
+        /// <summary>
         /// Removes the given user from the group
         /// </summary>
         /// <param name="group">The group to remove the user from</param>
