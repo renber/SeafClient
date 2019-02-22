@@ -67,7 +67,7 @@ async Task Demo()
 ```
 
 ## Currently implemented requests
-See the [official Seafile Web API documentation](http://manual.seafile.com/develop/web_api.html) for a list of all available requests. The following requests are currently implemented:
+See the [official Seafile Web API documentation](https://manual.seafile.com/develop/web_api_v2.1.html) for a list of all available requests. The following requests are currently implemented:
 
 * Authentication
 * Ping (with and without authentication)
@@ -89,5 +89,5 @@ See the [official Seafile Web API documentation](http://manual.seafile.com/devel
 * Get Update link / Update file
 * Starred files (list / star / unstar)
 * Groups (list / create / delete)
-Group members (add / bulk add / remove)
+* Group members (add / bulk add / remove)
 * Decrypt an encrypted library (allowing to download files from the encrypted library)
