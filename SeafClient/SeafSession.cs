@@ -742,7 +742,7 @@ namespace SeafClient
             libraryId.ThrowOnNull(nameof(libraryId));
             filePath.ThrowOnNull(nameof(filePath));
 
-            var request = new DeleteDirEntryRequest(AuthToken, libraryId, filePath);
+            var request = new DeleteFileEntryRequest(AuthToken, libraryId, filePath);
             return await _webConnection.SendRequestAsync(ServerUri, request);
         }
 

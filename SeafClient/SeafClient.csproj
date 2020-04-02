@@ -61,6 +61,7 @@
     <Compile Include="Exceptions\SeafTooManyRequestsException.cs" />
     <Compile Include="ISeafRequest.cs" />
     <Compile Include="ISeafWebConnection.cs" />
+    <Compile Include="Requests\Files\DeleteFileEntryRequest.cs" />
     <Compile Include="Requests\Files\GetFileDetailRequest.cs" />
     <Compile Include="Requests\Groups\AddGroupMemberRequest.cs" />
     <Compile Include="Requests\Groups\AddGroupRequest.cs" />
