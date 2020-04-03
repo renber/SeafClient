@@ -62,7 +62,11 @@ namespace SeafClient.Types
         // pass-through implementation for IList
         // *************************************
 
-        public SeafGroup this[int index] { get => Groups[index]; set => Groups[index] = value; }
+        public SeafGroup this[int index]
+        {
+	        get { return Groups[index]; }
+	        set { Groups[index] = value; }
+        }
 
         public IList<SeafGroup> Groups { get; private set; } = new List<SeafGroup>();
 

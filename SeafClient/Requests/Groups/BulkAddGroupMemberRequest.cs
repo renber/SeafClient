@@ -30,7 +30,11 @@ namespace SeafClient.Requests.Groups
             : base(authToken)
         {
             GroupId = groupId;
-            UserNames = userNames ?? throw new ArgumentNullException(nameof(userNames));
+            if (userNames == null)
+            {
+				throw new ArgumentNullException(nameof(userNames));
+	        }
+            UserNames = userNames;
         }
 
         public override IEnumerable<KeyValuePair<string, string>> GetBodyParameters()
