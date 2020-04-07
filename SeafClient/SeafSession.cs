@@ -742,7 +742,7 @@ namespace SeafClient
             libraryId.ThrowOnNull(nameof(libraryId));
             filePath.ThrowOnNull(nameof(filePath));
 
-            var request = new DeleteDirEntryRequest(AuthToken, libraryId, filePath);
+            var request = new DeleteFileEntryRequest(AuthToken, libraryId, filePath);
             return await _webConnection.SendRequestAsync(ServerUri, request);
         }
 
@@ -782,12 +782,27 @@ namespace SeafClient
         /// <returns>The download link which is valid once</returns>
         protected async Task<string> GetFileDownloadLink(string libraryId, string path)
         {
-            libraryId.ThrowOnNull(nameof(libraryId));
-            path.ThrowOnNull(nameof(path));
-
-            var request = new GetFileDownloadLinkRequest(AuthToken, libraryId, path);
-            return await _webConnection.SendRequestAsync(ServerUri, request);
+	        libraryId.ThrowOnNull(nameof(libraryId));
+	        path.ThrowOnNull(nameof(path));
+            return await GetFileDownloadLink(libraryId, path,false);
         }
+
+        /// <summary>
+        ///     Get a download link for the given file
+        /// </summary>
+        /// <param name="libraryId">The id of the library the file is in</param>
+        /// <param name="path">The path to the file</param>
+        /// <param name="reuseableLink">(optional): Set reuse to true if you want the generated download link can be accessed more than once in one hour.</param>
+        /// <returns>The download link which is valid once</returns>
+        public async Task<string> GetFileDownloadLink(string libraryId, string path, bool reuseableLink)
+        {
+	        libraryId.ThrowOnNull(nameof(libraryId));
+	        path.ThrowOnNull(nameof(path));
+
+	        var request = new GetFileDownloadLinkRequest(AuthToken, libraryId, path, reuseableLink);
+	        return await _webConnection.SendRequestAsync(ServerUri, request);
+        }
+
 
         /// <summary>
         ///     Get a thumbnail for the given file

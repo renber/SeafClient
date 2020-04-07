@@ -61,6 +61,7 @@
     <Compile Include="Exceptions\SeafTooManyRequestsException.cs" />
     <Compile Include="ISeafRequest.cs" />
     <Compile Include="ISeafWebConnection.cs" />
+    <Compile Include="Requests\Files\DeleteFileEntryRequest.cs" />
     <Compile Include="Requests\Files\GetFileDetailRequest.cs" />
     <Compile Include="Requests\Groups\AddGroupMemberRequest.cs" />
     <Compile Include="Requests\Groups\AddGroupRequest.cs" />
@@ -137,6 +138,9 @@
       <HintPath>..\packages\Newtonsoft.Json.8.0.3\lib\portable-net40+sl5+wp80+win8+wpa81\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Requests\ShareLinks\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
