@@ -101,6 +101,7 @@
     <Compile Include="Types\SeafSharedLibrary.cs" />
     <Compile Include="Types\SeafErrorCode.cs" />
     <Compile Include="Utils\CredentialFormContent.cs" />
+    <Compile Include="Utils\ParamUtils.cs" />
     <Compile Include="Utils\SeafDateUtils.cs" />
     <Compile Include="Utils\HttpUtils.cs" />
     <Compile Include="Utils\ProgressableStreamContent.cs" />
