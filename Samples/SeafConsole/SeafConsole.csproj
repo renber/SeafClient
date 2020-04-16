@@ -53,7 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\SeafClient\SeafClient.csproj">
-      <Project>{d3b1e98f-16cd-4a9f-86c9-e6292117619e}</Project>
+      <Project>{59e47c7c-f93b-4c08-bb5d-e597ad15f0d7}</Project>
       <Name>SeafClient</Name>
     </ProjectReference>
   </ItemGroup>

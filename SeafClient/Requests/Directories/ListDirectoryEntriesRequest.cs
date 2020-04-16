@@ -97,11 +97,19 @@ namespace SeafClient.Requests.Directories
         {
             var entries = await base.ParseResponseAsync(msg);
 
-            // set the library id &  path of the items              
+            // set the library id & path of the items              
             foreach (var entry in entries)
             {
                 entry.LibraryId = LibraryId;
-                entry.Path = Path + entry.Name;
+
+                // parent_dir is only sent when recursive was true
+                if (entry.ParentDirectory == null)
+                    entry.ParentDirectory = Path;
+
+                if (!entry.ParentDirectory.EndsWith("/"))
+                    entry.ParentDirectory += "/";
+
+            entry.Path = entry.ParentDirectory + entry.Name;
             }
 
             return entries;

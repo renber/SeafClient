@@ -85,12 +85,12 @@ namespace SeafClient.Requests.Files
         {
             string boundary = "Upload---------" + Guid.NewGuid().ToString();
 
-            var request = new HttpRequestMessage(HttpMethod.Post, UploadUri);
+            var request = new HttpRequestMessage(HttpMethod.Post, UploadUri);            
 
             foreach (var hi in GetAdditionalHeaders())
                 request.Headers.Add(hi.Key, hi.Value);
 
-            var content = new MultipartFormDataContent(boundary);
+            var content = new MultipartFormDataContentEx(boundary);
 
             // Add files to upload to the request
             foreach (var f in Files)
@@ -100,7 +100,7 @@ namespace SeafClient.Requests.Files
                 {
                     if (UploadProgress != null)
                         UploadProgress(p);
-                });
+                });                                
                 fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
                 fileContent.Headers.TryAddWithoutValidation("Content-Disposition", String.Format("form-data; name=\"file\"; filename=\"{0}\"", f.Filename));
 
@@ -117,22 +117,17 @@ namespace SeafClient.Requests.Files
             dirContent.Headers.TryAddWithoutValidation("Content-Disposition", @"form-data; name=""parent_dir""");
             content.Add(dirContent);
 
-            // transmit the content length, for this we use the private method TryComputeLength() called by reflection
-            long conLen = 0;                        
-            var func = typeof(MultipartContent).GetTypeInfo().GetDeclaredMethod("TryComputeLength");
-
-            object[] args = new object[] { 0L };
-            var r = func.Invoke(content, args);
-            if (r is bool && (bool)r)
-                conLen = (long)args[0];
+            // transmit the content length
+            long conLen;
+            if (!content.ComputeLength(out conLen))
+                conLen = 0;
 
             // the seafile-server implementation rejects the content-type if the boundary value is
             // placed inside quotes which is what HttpClient does, so we have to redefine the content-type without using quotes
             // and remove the actual content-type which uses quotes beforehand
             content.Headers.ContentType = null;
             content.Headers.TryAddWithoutValidation("Content-Type", "multipart/form-data; boundary=" + boundary);
-
-            //client.DefaultRequestHeaders.TransferEncodingChunked = true;                
+                        
             if (conLen > 0)
             {
                 // in order to disable buffering
@@ -158,6 +153,23 @@ namespace SeafClient.Requests.Files
         {
             Filename = filename;
             FileContent = content;
+        }
+    }
+
+    /// <summary>
+    /// Child class of MultipartFormDataContent which exposes the TryComputeLength function
+    /// </summary>
+    class MultipartFormDataContentEx : MultipartFormDataContent
+    {
+        public MultipartFormDataContentEx(String boundary)
+            : base(boundary)
+        {
+            // --
+        }
+
+        public bool ComputeLength(out long length)
+        {
+            return base.TryComputeLength(out length);
         }
     }
 }

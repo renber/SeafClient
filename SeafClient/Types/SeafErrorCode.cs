@@ -1,22 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SeafClient.Types
 {
     /// <summary>
-    /// Possible status codes returned by the Seafile API
-    /// These are in fact HTTP status codes
+    ///     Possible status codes returned by the Seafile API.
+    ///     These are in fact HTTP status codes
     /// </summary>
     public enum SeafErrorCode
     {
         NoDetails = -1,
         InvalidCredentials = 1,
-        PathDoesNotExist,     
+        PathDoesNotExist,
         FileNotFound,
         EncryptedLibrary_PasswordNotProvided,
         InvalidToken,
@@ -24,34 +19,36 @@ namespace SeafClient.Types
         NotEnoughPermissions,
         InvalidLibraryPassword,
         LibraryIsNotEncrypted,
-        ProtocolError        
+        ProtocolError,
+        TooManyRequests
     }
 
     /// <summary>
-    /// Represents a seafile error which consists
-    /// of a HTTP status code and a context-sensitive seafile error code if available
+    ///     Represents a seafile error which consists
+    ///     of a HTTP status code and a context-sensitive seafile error code if available
     /// </summary>
     public class SeafError
     {
-        /// <summary>
-        /// The HTTP status code received from the seafile server
-        /// </summary>
-        public HttpStatusCode HttpStatusCode { get; private set; }
-
-        private String httpStatusDescription = "";
-
-        /// <summary>
-        /// A more detailed error message in the seafile context if available
-        /// </summary>
-        public SeafErrorCode SeafErrorCode { get; private set; }
+        private readonly string _httpStatusDescription;
 
         public SeafError(HttpStatusCode httpStatusCode, SeafErrorCode seafErrorCode)
         {
             HttpStatusCode = httpStatusCode;
-            HttpResponseMessage r = new HttpResponseMessage(HttpStatusCode);
-            httpStatusDescription = r.ReasonPhrase;
             SeafErrorCode = seafErrorCode;
+
+            var respond = new HttpResponseMessage(HttpStatusCode);
+            _httpStatusDescription = respond.ReasonPhrase;
         }
+
+        /// <summary>
+        ///     The HTTP status code received from the seafile server
+        /// </summary>
+        public HttpStatusCode HttpStatusCode { get; }
+
+        /// <summary>
+        ///     A more detailed error message in the seafile context if available
+        /// </summary>
+        public SeafErrorCode SeafErrorCode { get; }
 
         public string GetErrorMessage()
         {
@@ -75,9 +72,11 @@ namespace SeafClient.Types
                     return "The provided password is invalid.";
                 case SeafErrorCode.LibraryIsNotEncrypted:
                     return "The library decryption request failed, since the library is not encrypted.";
+                case SeafErrorCode.TooManyRequests:
+                    return "The server returned TooManyRequests. Please wait before continuing sending requests.";
                 default:
                     // print the http status code
-                    return httpStatusDescription;
+                    return _httpStatusDescription;
             }
         }
     }

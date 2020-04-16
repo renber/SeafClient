@@ -39,10 +39,10 @@ namespace SeafClient.Requests.StarredFiles
             Path = path;
         }
 
-        public override IEnumerable<KeyValuePair<string, string>> GetPostParameters()
+        public override IEnumerable<KeyValuePair<string, string>> GetBodyParameters()
         {
             var parameters = new List<KeyValuePair<string, string>>();
-            parameters.AddRange(base.GetPostParameters());
+            parameters.AddRange(base.GetBodyParameters());
 
             parameters.Add(new KeyValuePair<string, string>("repo_id", LibraryId));
             parameters.Add(new KeyValuePair<string, string>("p", Path));

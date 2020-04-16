@@ -42,8 +42,10 @@ namespace SeafClient.Requests.UserAccountInfo
     /// </summary>
     public class AccountInfo
     {
-        public string Nickname { get; set; }
+        public string Name { get; set; }
         public string Email { get; set; }
+        public string Institution { get; set; }
+        public string Department { get; set; }        
 
         /// <summary>
         /// The space which the user's data consumes in bytes

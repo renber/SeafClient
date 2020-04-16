@@ -1,67 +1,63 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SeafConsole
 {
-    static class SecureStringUtils
+    internal static class SecureStringUtils
     {
         /// <summary>
-        /// Read a password from the console and return it as SecureString
+        ///     Read a password from the console and return it as SecureString
         /// </summary>
         /// <returns></returns>
-        public static bool ReadPasswordFromConsole(out SecureString secStr)
+        public static bool ReadPasswordFromConsole(out SecureString pw)
         {
-            secStr = new SecureString();
+            pw = new SecureString();
 
-            for (ConsoleKeyInfo c = Console.ReadKey(true); c.Key != ConsoleKey.Enter; c = Console.ReadKey(true))
+            for (var input = Console.ReadKey(true); input.Key != ConsoleKey.Enter; input = Console.ReadKey(true))
             {
-                if (c.Key == ConsoleKey.Backspace && secStr.Length > 0)
-                    secStr.RemoveAt(secStr.Length - 1);
+                if (input.Key == ConsoleKey.Backspace && pw.Length > 0)
+                    pw.RemoveAt(pw.Length - 1);
 
-                if (c.Key == ConsoleKey.Escape)
+                if (input.Key == ConsoleKey.Escape)
                 {
                     // cancel
-                    secStr.Dispose();
+                    pw.Dispose();
                     Console.WriteLine();
                     return false;
                 }
 
-                if (!Char.IsControl(c.KeyChar))
-                    secStr.AppendChar(c.KeyChar);
+                if (!char.IsControl(input.KeyChar))
+                    pw.AppendChar(input.KeyChar);
             }
 
-            secStr.MakeReadOnly();
+            pw.MakeReadOnly();
             Console.WriteLine();
+
             return true;
         }
 
         /// <summary>
-        /// Copy the contents of the given SecureString to a char array        
+        ///     Copy the contents of the given SecureString to a char array
         /// </summary>
-        /// <param name="s"></param>
+        /// <param name="value"></param>
         /// <returns></returns>
-        public static char[] SecureStringToCharArray(SecureString s)
+        public static char[] SecureStringToCharArray(SecureString value)
         {
-            IntPtr p = IntPtr.Zero;
-            char[] chars = new char[s.Length];
+            var intPtr = IntPtr.Zero;
+            var chars = new char[value.Length];
 
             try
             {
-                p = Marshal.SecureStringToBSTR(s);
-                Marshal.Copy(p, chars, 0, s.Length);
+                intPtr = Marshal.SecureStringToBSTR(value);
+                Marshal.Copy(intPtr, chars, 0, value.Length);
                 return chars;
             }
             finally
             {
-                if (p != IntPtr.Zero)
-                    Marshal.ZeroFreeBSTR(p);
+                if (intPtr != IntPtr.Zero)
+                    Marshal.ZeroFreeBSTR(intPtr);
             }
-
         }
     }
 }
