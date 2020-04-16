@@ -1,7 +1,8 @@
 # SeafClient
 
-This project is a client implementation for the [Seafile](https://www.seafile.com) Web API  for .Net as portable class library (PCL).
-It can be used in desktop apps, Windows Universal Platform Projects (UWP), Windows Store applications as well as in apps for Windows Phone 7.5+, 8.x and on Windows 10 Mobile.
+This project is a client implementation for the [Seafile](https://www.seafile.com) Web API  for .Net as .NET Standard Library.
+The minimum required .NET Standard version of the target platform is 1.1 .
+Thus, it can be used with applications targeting .NET Core, .NET Framework, Windows Universal Platform Projects (UWP), Xamarin and Mono as well as Unity. For a complete list of supported target platforms have a look [here](https://docs.microsoft.com/en-us/dotnet/standard/net-standard).
 
 The aim is to create a library to easily access a Seafile server and the files stored there through a .Net application in a strong-typed fashion (no custom JSON parsing and with meaningful error messages, etc.) The library uses async/await methods for requests to the Seafile server.
 
