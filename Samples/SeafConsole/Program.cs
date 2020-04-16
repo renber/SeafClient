@@ -20,8 +20,8 @@ namespace SeafConsole
         private static void Main()
         {
             // prompt the user for seafile server, username & password
-            var host = "https://raspsea.my-homeip.de:48000";
-            var user = "seafile_test@genie-soft.de";
+            var host = "";
+            var user = "";
 
             var validUri = false;
             Uri serverUri = null;
