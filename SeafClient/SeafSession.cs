@@ -8,6 +8,7 @@ using SeafClient.Requests.Directories;
 using SeafClient.Requests.Files;
 using SeafClient.Requests.Groups;
 using SeafClient.Requests.Libraries;
+using SeafClient.Requests.ShareLinks;
 using SeafClient.Requests.StarredFiles;
 using SeafClient.Requests.UserAccountInfo;
 using SeafClient.Types;
@@ -1223,6 +1224,60 @@ namespace SeafClient
             var request = new RemoveGroupMemberRequest(AuthToken, groupId, userName);
             return await _webConnection.SendRequestAsync(ServerUri, request);
         }
+
+
+        #region Share Links
+
+        public async Task<SeafShareLink> CreateShareLink(string pLibraryId,
+            string pPath,
+            string pPassword = "",
+            int pExpiryDays = 0,
+            bool pCanEdit = false,
+            bool pCanDownload = true)
+        {
+            var request = new CreateShareLinkRequest(
+                AuthToken,
+                pLibraryId,
+                pPath,
+                pPassword,
+                pExpiryDays,
+                pCanEdit,
+                pCanDownload
+                );
+            var result = await _webConnection.SendRequestAsync(ServerUri, request);
+            return result;
+        }
+
+        public async Task<IList<SeafShareLink>> ListSharedLinks(string pLibraryId = "", string pPath = "")
+        {
+            var request = new ListShareLinksRequest(AuthToken,pLibraryId,pPath);
+            return await _webConnection.SendRequestAsync(ServerUri, request);
+        }
+
+        public async Task<bool> DeleteShareLink(string shareLinkToken)
+        {
+            var request = new DeleteShareLinkRequest(AuthToken, shareLinkToken);
+            return await _webConnection.SendRequestAsync(ServerUri, request);
+        }
+
+
+
+
+        #endregion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         private void CheckRequestSupportedByServer(ISeafRequest request)
         {
