@@ -31,6 +31,8 @@ namespace SeafClient.Utils
             }
         }
 
+
+
         protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context)
         {
             try
