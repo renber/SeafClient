@@ -900,7 +900,7 @@ namespace SeafClient
         public async Task<bool> UploadSingle(string libraryId, string targetDirectory, string targetFilename, Stream fileContent, Action<float> progressCallback = null)
         {
             // to upload files we need to get an upload link first            
-            var req = new GetUploadLinkRequest(AuthToken, libraryId);
+            var req = new GetUploadLinkRequest(AuthToken, libraryId, targetDirectory);
             var uploadLink = await _webConnection.SendRequestAsync(ServerUri, req);
 
             var uploadRequest = new UploadFilesRequest(AuthToken, uploadLink, targetDirectory, targetFilename, fileContent, progressCallback);
