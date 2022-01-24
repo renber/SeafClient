@@ -13,15 +13,18 @@ namespace SeafClient.Requests.Files
     {
         public String LibraryId { get; set; }
 
+        public string ParentDir { get; set; }
+
         public override string CommandUri
         {
-            get { return String.Format("api2/repos/{0}/upload-link/", LibraryId); }
+            get { return $"api2/repos/{LibraryId}/upload-link/?p={ParentDir}"; }
         }
 
-        public GetUploadLinkRequest(string authToken, string libraryId)
+        public GetUploadLinkRequest(string authToken, string libraryId, string parentDir = "/")
             : base(authToken)
         {
             LibraryId = libraryId;
+            ParentDir = parentDir;
         }
 
         public override SeafError GetSeafError(System.Net.Http.HttpResponseMessage msg)
