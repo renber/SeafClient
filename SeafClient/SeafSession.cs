@@ -877,13 +877,14 @@ namespace SeafClient
         /// <param name="library">The library the file should be uploaded to</param>
         /// <param name="targetDirectory">The directory the file should be uploaded to</param>
         /// <param name="targetFilename">The name of the file</param>
+        /// <param name="replace">If true, the files will be replaced if it already exists</param>
         /// <param name="fileContent">The new content of the file</param>
         /// <param name="progressCallback">Optional progress callback (will report percentage of upload)</param>
-        public async Task<bool> UploadSingle(SeafLibrary library, string targetDirectory, string targetFilename, Stream fileContent, Action<float> progressCallback = null)
+        public async Task<bool> UploadSingle(SeafLibrary library, string targetDirectory, string targetFilename, bool replace, Stream fileContent, Action<float> progressCallback = null)
         {
             library.ThrowOnNull(nameof(library));
 
-            return await UploadSingle(library.Id, targetDirectory, targetFilename, fileContent, progressCallback);
+            return await UploadSingle(library.Id, targetDirectory, targetFilename, replace, fileContent, progressCallback);
         }
 
         /// <summary>
@@ -895,15 +896,16 @@ namespace SeafClient
         /// <param name="libraryId">The id of the library the file should be uploaded to</param>
         /// <param name="targetDirectory">The directory the file should be uploaded to</param>
         /// <param name="targetFilename">The name of the file</param>
+        /// <param name="replace">If true, the files will be replaced if it already exists</param>
         /// <param name="fileContent">The new content of the file</param>
         /// <param name="progressCallback">Optional progress callback (will report percentage of upload)</param>
-        public async Task<bool> UploadSingle(string libraryId, string targetDirectory, string targetFilename, Stream fileContent, Action<float> progressCallback = null)
+        public async Task<bool> UploadSingle(string libraryId, string targetDirectory, string targetFilename, bool replace, Stream fileContent, Action<float> progressCallback = null)
         {
             // to upload files we need to get an upload link first            
             var req = new GetUploadLinkRequest(AuthToken, libraryId);
             var uploadLink = await _webConnection.SendRequestAsync(ServerUri, req);
-
-            var uploadRequest = new UploadFilesRequest(AuthToken, uploadLink, targetDirectory, targetFilename, fileContent, progressCallback);
+ 
+            var uploadRequest = new UploadFilesRequest(AuthToken, uploadLink, targetDirectory, targetFilename, fileContent, progressCallback, replace);
             return await _webConnection.SendRequestAsync(ServerUri, uploadRequest);
         }
 

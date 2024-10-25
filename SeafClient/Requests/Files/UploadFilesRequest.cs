@@ -24,6 +24,8 @@ namespace SeafClient.Requests.Files
         public string TargetDirectory { get; set; }
 
         List<UploadFileInfo> files = new List<UploadFileInfo>();
+        
+        public bool Replace { get; set; }
 
         public List<UploadFileInfo> Files
         {
@@ -51,8 +53,8 @@ namespace SeafClient.Requests.Files
         /// <param name="filename"></param>
         /// <param name="fileContent"></param>
         /// <param name="progressCallback"></param>
-        public UploadFilesRequest(string authToken, string uploadUri, string targetDirectory, string filename, Stream fileContent, Action<float> progressCallback)
-            : this(authToken, uploadUri, targetDirectory, progressCallback, new UploadFileInfo(filename, fileContent))
+        public UploadFilesRequest(string authToken, string uploadUri, string targetDirectory, string filename, Stream fileContent, Action<float> progressCallback, bool replace)
+            : this(authToken, uploadUri, targetDirectory, replace, progressCallback, new UploadFileInfo(filename, fileContent))
         {
             // --
         }
@@ -65,12 +67,13 @@ namespace SeafClient.Requests.Files
         /// <param name="filename"></param>
         /// <param name="fileContent"></param>
         /// <param name="progressCallback"></param>
-        public UploadFilesRequest(string authToken, string uploadUri, string targetDirectory, Action<float> progressCallback, params UploadFileInfo[] uploadFiles)
+        public UploadFilesRequest(string authToken, string uploadUri, string targetDirectory, bool replace, Action<float> progressCallback, params UploadFileInfo[] uploadFiles)
             : base(authToken)
         {
             UploadUri = uploadUri;
             UploadProgress = progressCallback;
             TargetDirectory = targetDirectory;
+            Replace = replace;
 
             files.AddRange(uploadFiles);
         }
@@ -106,16 +109,26 @@ namespace SeafClient.Requests.Files
 
                 content.Add(fileContent);
             }
-
-            // the parent dir to upload the file to
+            
             string tDir = TargetDirectory;
-            if (!tDir.StartsWith("/"))
-                tDir = "/" + tDir;
+            if (tDir.StartsWith("/"))
+                tDir = tDir.Substring(1);
 
-            var dirContent = new StringContent(tDir, Encoding.UTF8);
+            var dirContent = new StringContent("/", Encoding.UTF8);
             dirContent.Headers.ContentType = null;
             dirContent.Headers.TryAddWithoutValidation("Content-Disposition", @"form-data; name=""parent_dir""");
             content.Add(dirContent);
+
+            var relativePathContent = new StringContent(tDir);
+            relativePathContent.Headers.ContentType = null;
+            relativePathContent.Headers.TryAddWithoutValidation("Content-Disposition", @"form-data; name=""relative_path""");
+            content.Add(relativePathContent);
+
+            var replaceContent = new StringContent(Replace ? "1" : "0");
+            replaceContent.Headers.ContentType = null;
+            replaceContent.Headers.TryAddWithoutValidation("Content-Disposition", @"form-data; name=""replace""");
+            content.Add(replaceContent);
+
 
             // transmit the content length
             long conLen;
@@ -139,6 +152,7 @@ namespace SeafClient.Requests.Files
 
             return request;
         }
+        
     }
 
     /// <summary>
