@@ -44,6 +44,12 @@ namespace SeafClient.Types
         public virtual string ParentDirectory { get; set; }
 
         /// <summary>
+        /// Last modifier email
+        /// </summary>
+        [JsonProperty("last_modifier_email")]
+        public virtual string LastModifierEmail { get; set; }
+
+        /// <summary>
         /// Returns the directory of this entry
         /// (if the entry is a directory this is the same as Path,
         /// if it is a file then the directory containing the file is returned)
