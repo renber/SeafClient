@@ -34,9 +34,12 @@ public sealed partial class DirectoriesApi
 
         var result = await _t.GetAsync<DirListResponse>(url, ct).ConfigureAwait(false);
         var parent = SeafPath.Normalize(path);
-        return result.DirentList
-            .Select(e => e with { LibraryId = libraryId, ParentDir = string.IsNullOrEmpty(e.ParentDir) ? parent : SeafPath.Normalize(e.ParentDir) })
-            .ToList();
+        for (var i = 0; i < result.DirentList.Count; i++)
+        {
+            var e = result.DirentList[i];
+            result.DirentList[i] = e with { LibraryId = libraryId, ParentDir = string.IsNullOrEmpty(e.ParentDir) ? parent : SeafPath.Normalize(e.ParentDir) };
+        }
+        return result.DirentList;
     }
 
     /// <summary>Lists the contents of a directory entry returned by an earlier listing.</summary>

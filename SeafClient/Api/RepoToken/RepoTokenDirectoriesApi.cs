@@ -26,9 +26,12 @@ public sealed class RepoTokenDirectoriesApi
         var libraryId = _c.GetLibraryIdAsync(ct);
         var result = await listing.ConfigureAwait(false);
         var id = await libraryId.ConfigureAwait(false);
-        return result.DirentList
-            .Select(e => e with { LibraryId = id, ParentDir = string.IsNullOrEmpty(e.ParentDir) ? parent : SeafPath.Normalize(e.ParentDir) })
-            .ToList();
+        for (var i = 0; i < result.DirentList.Count; i++)
+        {
+            var e = result.DirentList[i];
+            result.DirentList[i] = e with { LibraryId = id, ParentDir = string.IsNullOrEmpty(e.ParentDir) ? parent : SeafPath.Normalize(e.ParentDir) };
+        }
+        return result.DirentList;
     }
 
     /// <summary>Returns true if the directory exists.</summary>

@@ -41,7 +41,7 @@ public sealed class RepoTokenFilesApi
     {
         var link = await GetDownloadLinkAsync(path, ct).ConfigureAwait(false);
         var response = await _c.T.SendRawAsync(HttpMethod.Get, link, null, HttpCompletionOption.ResponseHeadersRead, ct, authenticate: false).ConfigureAwait(false);
-        return FilesApi.WrapResponseStream(await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false), response);
+        return await SeafTransport.ReadStreamAsync(response, ct).ConfigureAwait(false);
     }
 
     public async Task DownloadAsync(string path, Stream destination, CancellationToken ct = default)
@@ -52,14 +52,18 @@ public sealed class RepoTokenFilesApi
 
     public async Task<byte[]> ReadAllBytesAsync(string path, CancellationToken ct = default)
     {
-        using var ms = new MemoryStream();
-        await DownloadAsync(path, ms, ct).ConfigureAwait(false);
-        return ms.ToArray();
+        var link = await GetDownloadLinkAsync(path, ct).ConfigureAwait(false);
+        using var response = await _c.T.SendRawAsync(HttpMethod.Get, link, null, HttpCompletionOption.ResponseContentRead, ct, authenticate: false).ConfigureAwait(false);
+        return await response.Content.ReadAsByteArrayAsync(ct).ConfigureAwait(false);
     }
 
     /// <summary>Downloads a text file, decoding as UTF-8 by default (the file server's declared charset is unreliable).</summary>
     public async Task<string> ReadAllTextAsync(string path, Encoding? encoding = null, CancellationToken ct = default)
-        => (encoding ?? Encoding.UTF8).GetString(await ReadAllBytesAsync(path, ct).ConfigureAwait(false));
+    {
+        await using var source = await OpenReadAsync(path, ct).ConfigureAwait(false);
+        using var reader = new StreamReader(source, encoding ?? Encoding.UTF8, detectEncodingFromByteOrderMarks: false);
+        return await reader.ReadToEndAsync(ct).ConfigureAwait(false);
+    }
 
     // ---------------- upload ----------------
 

@@ -6,6 +6,4 @@ public sealed partial class FilesApi
 
     internal static Func<HttpContent> BuildReplayableUpload(IEnumerable<(string Name, string Value)> fields, string fileName, Stream content, string? contentType, IProgress<long>? progress)
         => Replayable(content, () => BuildMultipart(fields, fileName, content, contentType, progress));
-
-    internal static Stream WrapResponseStream(Stream inner, HttpResponseMessage response) => new ResponseStream(inner, response);
 }

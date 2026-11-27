@@ -27,6 +27,10 @@ internal static class SeafJson
 
     public static T Deserialize<T>(string json) =>
         JsonSerializer.Deserialize<T>(json, Options) ?? throw new JsonException($"Seafile returned an empty {typeof(T).Name} payload.");
+
+    public static async Task<T> DeserializeAsync<T>(Stream utf8Json, CancellationToken ct) =>
+        await JsonSerializer.DeserializeAsync<T>(utf8Json, Options, ct).ConfigureAwait(false)
+        ?? throw new JsonException($"Seafile returned an empty {typeof(T).Name} payload.");
 }
 
 /// <summary>
@@ -89,9 +93,18 @@ internal sealed class FlexibleBooleanConverter : JsonConverter<bool>
         JsonTokenType.False => false,
         JsonTokenType.Null => false,
         JsonTokenType.Number => reader.GetDouble() != 0,
-        JsonTokenType.String => reader.GetString()?.Trim().ToLowerInvariant() is "true" or "1" or "yes",
+        JsonTokenType.String => IsTruthy(reader.GetString()),
         _ => throw new JsonException($"Unexpected token {reader.TokenType} for a boolean."),
     };
+
+    private static bool IsTruthy(string? value)
+    {
+        if (value is null) return false;
+        var span = value.AsSpan().Trim();
+        return span.Equals("true", StringComparison.OrdinalIgnoreCase)
+            || span.Equals("1", StringComparison.Ordinal)
+            || span.Equals("yes", StringComparison.OrdinalIgnoreCase);
+    }
 
     public override void Write(Utf8JsonWriter writer, bool value, JsonSerializerOptions options) => writer.WriteBooleanValue(value);
 }

@@ -61,7 +61,7 @@ public sealed partial class FilesApi
     {
         var link = await GetDownloadLinkAsync(libraryId, path, false, ct).ConfigureAwait(false);
         var response = await _t.SendRawAsync(HttpMethod.Get, link, null, HttpCompletionOption.ResponseHeadersRead, ct, authenticate: false).ConfigureAwait(false);
-        return new ResponseStream(await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false), response);
+        return await SeafTransport.ReadStreamAsync(response, ct).ConfigureAwait(false);
     }
 
     /// <summary>Downloads a file into <paramref name="destination"/>.</summary>
@@ -73,9 +73,9 @@ public sealed partial class FilesApi
 
     public async Task<byte[]> ReadAllBytesAsync(string libraryId, string path, CancellationToken ct = default)
     {
-        using var ms = new MemoryStream();
-        await DownloadAsync(libraryId, path, ms, ct).ConfigureAwait(false);
-        return ms.ToArray();
+        var link = await GetDownloadLinkAsync(libraryId, path, false, ct).ConfigureAwait(false);
+        using var response = await _t.SendRawAsync(HttpMethod.Get, link, null, HttpCompletionOption.ResponseContentRead, ct, authenticate: false).ConfigureAwait(false);
+        return await response.Content.ReadAsByteArrayAsync(ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -83,7 +83,11 @@ public sealed partial class FilesApi
     /// so the response's declared encoding is deliberately ignored.
     /// </summary>
     public async Task<string> ReadAllTextAsync(string libraryId, string path, Encoding? encoding = null, CancellationToken ct = default)
-        => (encoding ?? Encoding.UTF8).GetString(await ReadAllBytesAsync(libraryId, path, ct).ConfigureAwait(false));
+    {
+        await using var source = await OpenReadAsync(libraryId, path, ct).ConfigureAwait(false);
+        using var reader = new StreamReader(source, encoding ?? Encoding.UTF8, detectEncodingFromByteOrderMarks: false);
+        return await reader.ReadToEndAsync(ct).ConfigureAwait(false);
+    }
 
     /// <summary>Returns a thumbnail image (PNG/JPEG bytes) for an image or video file.</summary>
     public async Task<byte[]> GetThumbnailAsync(string libraryId, string path, int size = 128, CancellationToken ct = default)
@@ -223,30 +227,6 @@ public sealed partial class FilesApi
         => _t.SendAsync<SeafOperationResult>(HttpMethod.Post, Url.Of(FileUrl(libraryId)).Q("p", SeafPath.Normalize(path)), SeafTransport.Form(form), ct);
 
     private sealed record HistoryResponse { public List<SeafFileRevision> Data { get; init; } = []; }
-
-    /// <summary>Wraps a response stream so disposing it also disposes the response.</summary>
-    private sealed class ResponseStream(Stream inner, HttpResponseMessage response) : Stream
-    {
-        public override bool CanRead => inner.CanRead;
-        public override bool CanSeek => false;
-        public override bool CanWrite => false;
-        public override long Length => response.Content.Headers.ContentLength ?? throw new NotSupportedException();
-        public override long Position { get => inner.Position; set => throw new NotSupportedException(); }
-        public override void Flush() { }
-        public override int Read(byte[] buffer, int offset, int count) => inner.Read(buffer, offset, count);
-        public override int Read(Span<byte> buffer) => inner.Read(buffer);
-        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken ct) => inner.ReadAsync(buffer, offset, count, ct);
-        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken ct = default) => inner.ReadAsync(buffer, ct);
-        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
-        public override void SetLength(long value) => throw new NotSupportedException();
-        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing) { inner.Dispose(); response.Dispose(); }
-            base.Dispose(disposing);
-        }
-    }
 }
 
 /// <summary>Stream content that reports bytes written and does not dispose the caller's stream.</summary>
@@ -254,14 +234,21 @@ internal sealed class ProgressStreamContent(Stream source, IProgress<long>? prog
 {
     protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context, CancellationToken ct)
     {
-        var buffer = new byte[bufferSize];
-        long total = 0;
-        int read;
-        while ((read = await source.ReadAsync(buffer, ct).ConfigureAwait(false)) > 0)
+        var buffer = System.Buffers.ArrayPool<byte>.Shared.Rent(bufferSize);
+        try
         {
-            await stream.WriteAsync(buffer.AsMemory(0, read), ct).ConfigureAwait(false);
-            total += read;
-            progress?.Report(total);
+            long total = 0;
+            int read;
+            while ((read = await source.ReadAsync(buffer.AsMemory(0, bufferSize), ct).ConfigureAwait(false)) > 0)
+            {
+                await stream.WriteAsync(buffer.AsMemory(0, read), ct).ConfigureAwait(false);
+                total += read;
+                progress?.Report(total);
+            }
+        }
+        finally
+        {
+            System.Buffers.ArrayPool<byte>.Shared.Return(buffer);
         }
     }
 

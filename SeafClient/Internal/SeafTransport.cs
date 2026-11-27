@@ -10,6 +10,10 @@ namespace SeafClient.Internal;
 /// </summary>
 internal sealed class SeafTransport : IDisposable
 {
+    private static readonly MediaTypeWithQualityHeaderValue AcceptJson = new("application/json");
+    private static readonly MediaTypeHeaderValue JsonMediaType = new("application/json", "utf-8");
+    private static readonly string[] ErrorKeys = ["error_msg", "detail", "error", "non_field_errors", "message"];
+
     private readonly HttpClient? _http;
     private readonly Func<HttpClient>? _httpFactory;
     private readonly bool _ownsHttp;
@@ -67,11 +71,32 @@ internal sealed class SeafTransport : IDisposable
 
     // ---------- typed helpers ----------
 
-    public async Task<T> GetAsync<T>(string url, CancellationToken ct)
-        => SeafJson.Deserialize<T>(await SendForStringAsync(HttpMethod.Get, url, null, ct).ConfigureAwait(false));
+    public Task<T> GetAsync<T>(string url, CancellationToken ct)
+        => SendAsync<T>(HttpMethod.Get, url, null, ct);
 
     public async Task<T> SendAsync<T>(HttpMethod method, string url, Func<HttpContent>? content, CancellationToken ct)
-        => SeafJson.Deserialize<T>(await SendForStringAsync(method, url, content, ct).ConfigureAwait(false));
+    {
+        using var response = await SendRawAsync(method, url, content, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+        await using var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        return await SeafJson.DeserializeAsync<T>(stream, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Opens the response content stream and disposes <paramref name="response"/> if obtaining the stream fails.
+    /// When returned, disposing the stream releases the underlying HTTP response/connection in SocketsHttpHandler.
+    /// </summary>
+    public static async Task<Stream> ReadStreamAsync(HttpResponseMessage response, CancellationToken ct)
+    {
+        try
+        {
+            return await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        }
+        catch
+        {
+            response.Dispose();
+            throw;
+        }
+    }
 
     public async Task SendAsync(HttpMethod method, string url, Func<HttpContent>? content, CancellationToken ct)
         => await SendForStringAsync(method, url, content, ct).ConfigureAwait(false);
@@ -85,8 +110,11 @@ internal sealed class SeafTransport : IDisposable
     public static Func<HttpContent> Form(params (string Key, string? Value)[] fields) => () =>
         new FormUrlEncodedContent(fields.Where(f => f.Value != null).Select(f => new KeyValuePair<string, string>(f.Key, f.Value!)));
 
-    public static Func<HttpContent> Json(object body) => () =>
-        new StringContent(JsonSerializer.Serialize(body, SeafJson.Options), Encoding.UTF8, "application/json");
+    public static Func<HttpContent> Json<T>(T body) => () =>
+        new ByteArrayContent(JsonSerializer.SerializeToUtf8Bytes(body, SeafJson.Options))
+        {
+            Headers = { ContentType = JsonMediaType },
+        };
 
     /// <summary>
     /// Creates a <see cref="MultipartFormDataContent"/> with UTF-8 header encoding and an unquoted boundary.
@@ -128,7 +156,7 @@ internal sealed class SeafTransport : IDisposable
             ObjectDisposedException.ThrowIf(_disposed, this);
 
             using var request = new HttpRequestMessage(method, uri);
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            request.Headers.Accept.Add(AcceptJson);
             request.Headers.UserAgent.ParseAdd(_options.UserAgent);
             if (authenticate && activeToken != null)
                 request.Headers.Authorization = new AuthenticationHeaderValue("Token", activeToken);
@@ -267,7 +295,7 @@ internal sealed class SeafTransport : IDisposable
             if (root.ValueKind == JsonValueKind.String) return root.GetString();
             if (root.ValueKind == JsonValueKind.Object)
             {
-                foreach (var key in new[] { "error_msg", "detail", "error", "non_field_errors", "message" })
+                foreach (var key in ErrorKeys)
                     if (root.TryGetProperty(key, out var v)) return Flatten(v);
 
                 // Field validation errors: {"email": ["Enter a valid email address."]}

@@ -108,7 +108,7 @@ public sealed partial class ItemsApi
             await Task.Delay(500, ct).ConfigureAwait(false);
 
         var response = await _t.SendRawAsync(HttpMethod.Get, task.DownloadUri.AbsoluteUri, null, HttpCompletionOption.ResponseHeadersRead, ct, authenticate: false).ConfigureAwait(false);
-        return new OwnedResponseStream(await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false), response);
+        return await SeafTransport.ReadStreamAsync(response, ct).ConfigureAwait(false);
     }
 
     /// <summary>Zips the entries on the server and writes the zip into <paramref name="destination"/>.</summary>
