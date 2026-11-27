@@ -4,16 +4,20 @@ namespace SeafClient.Tests;
 
 public class FilesAccountUnitTests
 {
-    private sealed class Recorder(string body) : HttpMessageHandler
+    private sealed class Recorder(Func<HttpRequestMessage, string> respond) : HttpMessageHandler
     {
+        public Recorder(string body) : this(_ => body) { }
+
         public List<HttpRequestMessage> Requests { get; } = [];
         public List<string> Bodies { get; } = [];
+        public List<string?> ContentTypes { get; } = [];
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             Requests.Add(request);
+            ContentTypes.Add(request.Content?.Headers.ContentType?.ToString());
             Bodies.Add(request.Content == null ? "" : await request.Content.ReadAsStringAsync(ct));
-            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body) };
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(respond(request)) };
         }
     }
 
@@ -109,5 +113,43 @@ public class FilesAccountUnitTests
         var result = await s.Invitations.CreateManyAsync(["a@x.y", "b@x.y"]);
         Assert.Equal("type=guest&accepter=a%40x.y&accepter=b%40x.y", r.Bodies[0]);
         Assert.Equal("already invited", Assert.Single(result.Failed).ErrorMsg);
+    }
+
+    [Fact]
+    public async Task Upload_UsesUnquotedMultipartBoundary()
+    {
+        var r = new Recorder(req => req.Method == HttpMethod.Get
+            ? "\"http://seaf.test/seafhttp/upload-api/tok\""
+            : """[{"name":"hello.txt","id":"abc","size":5}]""");
+        using var s = Session(r);
+
+        await s.Files.UploadAsync("lib", "/dir", "hello.txt", new MemoryStream("hello"u8.ToArray()));
+
+        Assert.Equal(2, r.Requests.Count);
+        AssertUnquotedMultipart(r.ContentTypes[1], r.Bodies[1]);
+    }
+
+    [Fact]
+    public async Task UploadAvatar_UsesUnquotedMultipartBoundary()
+    {
+        var r = new Recorder("""{"avatar_url":"http://seaf.test/media/avatars/pic.png"}""");
+        using var s = Session(r);
+
+        await s.Account.UploadAvatarAsync(new MemoryStream([1, 2, 3]), "pic.png");
+
+        Assert.Single(r.Requests);
+        AssertUnquotedMultipart(r.ContentTypes[0], r.Bodies[0]);
+    }
+
+    private static void AssertUnquotedMultipart(string? contentType, string body)
+    {
+        Assert.NotNull(contentType);
+        const string prefix = "multipart/form-data; boundary=";
+        Assert.StartsWith(prefix + "----SeafClient", contentType);
+        Assert.DoesNotContain("\"", contentType);
+
+        var boundary = contentType[prefix.Length..];
+        Assert.StartsWith("--" + boundary + "\r\n", body);
+        Assert.EndsWith("--" + boundary + "--\r\n", body);
     }
 }

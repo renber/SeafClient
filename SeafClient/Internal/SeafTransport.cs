@@ -79,6 +79,26 @@ internal sealed class SeafTransport : IDisposable
     public static Func<HttpContent> Json(object body) => () =>
         new StringContent(JsonSerializer.Serialize(body, SeafJson.Options), Encoding.UTF8, "application/json");
 
+    /// <summary>
+    /// Creates a <see cref="MultipartFormDataContent"/> with UTF-8 header encoding and an unquoted boundary.
+    /// .NET quotes multipart boundaries by default, which Seafile 10's file server rejects with 400 Bad Request.
+    /// </summary>
+    public static MultipartFormDataContent CreateMultipart()
+    {
+        var boundary = "----SeafClient" + Guid.NewGuid().ToString("N");
+        var form = new MultipartFormDataContent(boundary)
+        {
+            // Seafile's file server reads raw UTF-8 names; .NET's default RFC 2047 encoding of non-ASCII names is not understood.
+            HeaderEncodingSelector = (_, _) => Encoding.UTF8,
+        };
+        // Replace .NET's default quoted boundary parameter (boundary="...") with an unquoted token.
+        form.Headers.ContentType = new MediaTypeHeaderValue("multipart/form-data")
+        {
+            Parameters = { new NameValueHeaderValue("boundary", boundary) },
+        };
+        return form;
+    }
+
     // ---------- core send with retries ----------
 
     /// <summary>

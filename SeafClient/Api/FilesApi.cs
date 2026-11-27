@@ -172,9 +172,7 @@ public sealed partial class FilesApi
 
     private static MultipartFormDataContent BuildMultipart(IEnumerable<(string Name, string Value)> fields, string fileName, Stream content, string? contentType, IProgress<long>? progress)
     {
-        var form = new MultipartFormDataContent("----SeafClient" + Guid.NewGuid().ToString("N"));
-        // Seafile's file server reads raw UTF-8 names; .NET's default RFC 2047 encoding of non-ASCII names is not understood.
-        form.HeaderEncodingSelector = (_, _) => Encoding.UTF8;
+        var form = SeafTransport.CreateMultipart();
 
         var file = new ProgressStreamContent(content, progress);
         file.Headers.ContentType = new MediaTypeHeaderValue(contentType ?? "application/octet-stream");

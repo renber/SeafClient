@@ -45,8 +45,7 @@ public sealed class AccountApi
                 image.Position = start;
             }
 
-            var form = new MultipartFormDataContent("----SeafClient" + Guid.NewGuid().ToString("N"));
-            form.HeaderEncodingSelector = (_, _) => Encoding.UTF8;
+            var form = SeafTransport.CreateMultipart();
             var file = new StreamContent(image);
             file.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
             file.Headers.TryAddWithoutValidation("Content-Disposition", $"form-data; name=\"avatar\"; filename=\"{fileName.Replace("\"", "\\\"")}\"");
