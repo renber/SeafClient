@@ -32,17 +32,9 @@ public sealed partial class FilesApi
 
     /// <summary>Downloads an old version of a file into memory.</summary>
     public async Task<byte[]> ReadRevisionBytesAsync(string libraryId, string path, string commitId, CancellationToken ct = default)
-    {
-        var link = await GetRevisionDownloadLinkAsync(libraryId, path, commitId, ct).ConfigureAwait(false);
-        using var response = await _t.SendRawAsync(HttpMethod.Get, link, null, HttpCompletionOption.ResponseContentRead, ct, authenticate: false).ConfigureAwait(false);
-        return await response.Content.ReadAsByteArrayAsync(ct).ConfigureAwait(false);
-    }
+        => await _t.DownloadBytesAsync(await GetRevisionDownloadLinkAsync(libraryId, path, commitId, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
 
     /// <summary>Downloads an old version of a text file, decoded as UTF-8 by default (see <see cref="ReadAllTextAsync"/>).</summary>
     public async Task<string> ReadRevisionTextAsync(string libraryId, string path, string commitId, Encoding? encoding = null, CancellationToken ct = default)
-    {
-        await using var source = await OpenRevisionReadAsync(libraryId, path, commitId, ct).ConfigureAwait(false);
-        using var reader = new StreamReader(source, encoding ?? Encoding.UTF8, detectEncodingFromByteOrderMarks: false);
-        return await reader.ReadToEndAsync(ct).ConfigureAwait(false);
-    }
+        => await _t.DownloadTextAsync(await GetRevisionDownloadLinkAsync(libraryId, path, commitId, ct).ConfigureAwait(false), encoding, ct).ConfigureAwait(false);
 }

@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
@@ -96,6 +97,62 @@ internal sealed class SeafTransport : IDisposable
             response.Dispose();
             throw;
         }
+    }
+
+    public async Task<byte[]> DownloadBytesAsync(string url, CancellationToken ct)
+    {
+        using var response = await SendRawAsync(HttpMethod.Get, url, null, HttpCompletionOption.ResponseHeadersRead, ct, authenticate: false).ConfigureAwait(false);
+        await using var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+
+        if (response.Content.Headers.ContentLength is long contentLength and >= 0 && contentLength <= Array.MaxLength)
+        {
+            if (contentLength == 0) return [];
+            var buffer = GC.AllocateUninitializedArray<byte>((int)contentLength);
+            var read = await ReadUpToAsync(stream, buffer, ct).ConfigureAwait(false);
+            return read == buffer.Length ? buffer : buffer[..read];
+        }
+
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms, ct).ConfigureAwait(false);
+        return ms.ToArray();
+    }
+
+    public async Task<string> DownloadTextAsync(string url, Encoding? encoding, CancellationToken ct)
+    {
+        var enc = encoding ?? Encoding.UTF8;
+        using var response = await SendRawAsync(HttpMethod.Get, url, null, HttpCompletionOption.ResponseHeadersRead, ct, authenticate: false).ConfigureAwait(false);
+        await using var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+
+        if (response.Content.Headers.ContentLength is long contentLength and >= 0 && contentLength <= 16 * 1024 * 1024)
+        {
+            if (contentLength == 0) return string.Empty;
+            var len = (int)contentLength;
+            var rented = ArrayPool<byte>.Shared.Rent(len);
+            try
+            {
+                var read = await ReadUpToAsync(stream, rented.AsMemory(0, len), ct).ConfigureAwait(false);
+                return enc.GetString(rented.AsSpan(0, read));
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(rented);
+            }
+        }
+
+        using var reader = new StreamReader(stream, enc, detectEncodingFromByteOrderMarks: false);
+        return await reader.ReadToEndAsync(ct).ConfigureAwait(false);
+    }
+
+    private static async Task<int> ReadUpToAsync(Stream stream, Memory<byte> destination, CancellationToken ct)
+    {
+        var offset = 0;
+        while (offset < destination.Length)
+        {
+            var n = await stream.ReadAsync(destination[offset..], ct).ConfigureAwait(false);
+            if (n == 0) break;
+            offset += n;
+        }
+        return offset;
     }
 
     public async Task SendAsync(HttpMethod method, string url, Func<HttpContent>? content, CancellationToken ct)

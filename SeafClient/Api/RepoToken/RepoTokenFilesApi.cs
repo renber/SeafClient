@@ -51,19 +51,11 @@ public sealed class RepoTokenFilesApi
     }
 
     public async Task<byte[]> ReadAllBytesAsync(string path, CancellationToken ct = default)
-    {
-        var link = await GetDownloadLinkAsync(path, ct).ConfigureAwait(false);
-        using var response = await _c.T.SendRawAsync(HttpMethod.Get, link, null, HttpCompletionOption.ResponseContentRead, ct, authenticate: false).ConfigureAwait(false);
-        return await response.Content.ReadAsByteArrayAsync(ct).ConfigureAwait(false);
-    }
+        => await _c.T.DownloadBytesAsync(await GetDownloadLinkAsync(path, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
 
     /// <summary>Downloads a text file, decoding as UTF-8 by default (the file server's declared charset is unreliable).</summary>
     public async Task<string> ReadAllTextAsync(string path, Encoding? encoding = null, CancellationToken ct = default)
-    {
-        await using var source = await OpenReadAsync(path, ct).ConfigureAwait(false);
-        using var reader = new StreamReader(source, encoding ?? Encoding.UTF8, detectEncodingFromByteOrderMarks: false);
-        return await reader.ReadToEndAsync(ct).ConfigureAwait(false);
-    }
+        => await _c.T.DownloadTextAsync(await GetDownloadLinkAsync(path, ct).ConfigureAwait(false), encoding, ct).ConfigureAwait(false);
 
     // ---------------- upload ----------------
 

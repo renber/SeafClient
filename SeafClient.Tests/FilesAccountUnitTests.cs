@@ -213,6 +213,39 @@ public class FilesAccountUnitTests
     }
 
     [Fact]
+    public async Task Files_ReadAllBytesAndText_HandleEmptyAndUnknownContentLength()
+    {
+        byte[] binaryPayload = [0x10, 0x20, 0x30, 0x40, 0x50];
+        const string textPayload = "café ☕";
+
+        var handler = new SequenceHandler((req, _) =>
+        {
+            var p = req.RequestUri!.AbsolutePath;
+            if (p.EndsWith("/file/"))
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent($"\"http://seaf.test/dl/{req.RequestUri.Query}\"") });
+            if (req.RequestUri.Query.Contains("empty"))
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent([]) });
+            if (req.RequestUri.Query.Contains("chunked-bin"))
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new UnknownLengthContent(binaryPayload) });
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new UnknownLengthContent(System.Text.Encoding.UTF8.GetBytes(textPayload)) });
+        });
+
+        using var s = SeafSession.FromToken(new Uri("http://seaf.test/"), "tok", new SeafClientOptions { HttpClient = new HttpClient(handler) });
+
+        Assert.Empty(await s.Files.ReadAllBytesAsync("repo-1", "/empty"));
+        Assert.Equal(string.Empty, await s.Files.ReadAllTextAsync("repo-1", "/empty"));
+        Assert.Equal(binaryPayload, await s.Files.ReadAllBytesAsync("repo-1", "/chunked-bin"));
+        Assert.Equal(textPayload, await s.Files.ReadAllTextAsync("repo-1", "/chunked-text"));
+    }
+
+    private sealed class UnknownLengthContent(byte[] data) : HttpContent
+    {
+        protected override Task SerializeToStreamAsync(Stream stream, System.Net.TransportContext? context) => stream.WriteAsync(data, 0, data.Length);
+        protected override Task<Stream> CreateContentReadStreamAsync() => Task.FromResult<Stream>(new MemoryStream(data, writable: false));
+        protected override bool TryComputeLength(out long length) { length = 0; return false; }
+    }
+
+    [Fact]
     public async Task ProgressStreamContent_ReportsMultiChunkProgress_AndLeavesSourceOpen()
     {
         var reported = new List<long>();

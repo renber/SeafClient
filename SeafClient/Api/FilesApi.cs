@@ -72,22 +72,14 @@ public sealed partial class FilesApi
     }
 
     public async Task<byte[]> ReadAllBytesAsync(string libraryId, string path, CancellationToken ct = default)
-    {
-        var link = await GetDownloadLinkAsync(libraryId, path, false, ct).ConfigureAwait(false);
-        using var response = await _t.SendRawAsync(HttpMethod.Get, link, null, HttpCompletionOption.ResponseContentRead, ct, authenticate: false).ConfigureAwait(false);
-        return await response.Content.ReadAsByteArrayAsync(ct).ConfigureAwait(false);
-    }
+        => await _t.DownloadBytesAsync(await GetDownloadLinkAsync(libraryId, path, false, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
 
     /// <summary>
     /// Downloads a text file. Decodes as UTF-8 by default: the file server often labels content with a wrong charset,
     /// so the response's declared encoding is deliberately ignored.
     /// </summary>
     public async Task<string> ReadAllTextAsync(string libraryId, string path, Encoding? encoding = null, CancellationToken ct = default)
-    {
-        await using var source = await OpenReadAsync(libraryId, path, ct).ConfigureAwait(false);
-        using var reader = new StreamReader(source, encoding ?? Encoding.UTF8, detectEncodingFromByteOrderMarks: false);
-        return await reader.ReadToEndAsync(ct).ConfigureAwait(false);
-    }
+        => await _t.DownloadTextAsync(await GetDownloadLinkAsync(libraryId, path, false, ct).ConfigureAwait(false), encoding, ct).ConfigureAwait(false);
 
     /// <summary>Returns a thumbnail image (PNG/JPEG bytes) for an image or video file.</summary>
     public async Task<byte[]> GetThumbnailAsync(string libraryId, string path, int size = 128, CancellationToken ct = default)
