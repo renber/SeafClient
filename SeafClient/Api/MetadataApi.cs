@@ -13,6 +13,12 @@ public sealed partial class MetadataApi
     /// </summary>
     public const int MaxBatchSize = 100;
 
+    /// <summary>Records per update request; overridable by tests to exercise multi-request batching.</summary>
+    internal int UpdateBatchSize { get; set; } = MaxBatchSize;
+
+    /// <summary>Object ids per extract-file-details request (server limit 50); overridable by tests.</summary>
+    internal int ExtractBatchSize { get; set; } = 50;
+
     private readonly SeafTransport _t;
     internal MetadataApi(SeafTransport t) => _t = t;
 
@@ -54,5 +60,5 @@ public sealed partial class MetadataApi
 
     /// <summary>Updates many records. Records with identical values share requests of up to <see cref="MaxBatchSize"/>.</summary>
     public Task UpdateRecordsAsync(string libraryId, IEnumerable<SeafMetadataUpdate> updates, CancellationToken ct = default)
-        => Core(libraryId).UpdateRecordsAsync(updates, MaxBatchSize, ct);
+        => Core(libraryId).UpdateRecordsAsync(updates, UpdateBatchSize, ct);
 }

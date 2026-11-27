@@ -92,7 +92,7 @@ public sealed partial class MetadataApi
     public async Task<IReadOnlyList<SeafExtractedFileDetails>> ExtractFileDetailsAsync(string libraryId, IEnumerable<string> objectIds, CancellationToken ct = default)
     {
         var result = new List<SeafExtractedFileDetails>();
-        foreach (var chunk in objectIds.Chunk(50))
+        foreach (var chunk in objectIds.Chunk(ExtractBatchSize))
         {
             var r = await _t.SendAsync<DetailsResponse>(HttpMethod.Post, Base(libraryId) + "extract-file-details/",
                 SeafTransport.Json(new { obj_ids = chunk }), ct).ConfigureAwait(false);

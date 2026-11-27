@@ -65,7 +65,7 @@ public sealed class AccountApi
 
     /// <summary>
     /// Unlinks a client, revoking its token. With <paramref name="remoteWipe"/> the client also deletes its local copies of
-    /// synced libraries the next time it connects.
+    /// synced libraries the next time it connects. Seafile 14 answers 500 for a device that is not linked.
     /// </summary>
     public Task UnlinkDeviceAsync(string platform, string deviceId, bool remoteWipe = false, CancellationToken ct = default)
         => _t.SendAsync(HttpMethod.Delete, "api2/devices/", SeafTransport.Form(

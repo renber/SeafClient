@@ -17,6 +17,9 @@ public sealed class RepoTokenMetadataApi
 {
     private readonly MetadataCore _core;
 
+    /// <summary>Records per update request; overridable by tests to exercise multi-request batching.</summary>
+    internal int UpdateBatchSize { get; set; } = MetadataApi.MaxBatchSize;
+
     internal RepoTokenMetadataApi(RepoTokenContext c)
     {
         _core = new MetadataCore(c.T, RepoTokenContext.Base + "metadata/");
@@ -33,11 +36,11 @@ public sealed class RepoTokenMetadataApi
 
     /// <summary>Updates column values of one record (values keyed by column name).</summary>
     public Task UpdateRecordAsync(string recordId, IReadOnlyDictionary<string, object?> values, CancellationToken ct = default)
-        => _core.UpdateRecordsAsync([new SeafMetadataUpdate(recordId, values)], MetadataApi.MaxBatchSize, ct);
+        => _core.UpdateRecordsAsync([new SeafMetadataUpdate(recordId, values)], UpdateBatchSize, ct);
 
     /// <summary>Updates many records, batched (records with different values are sent in separate requests).</summary>
     public Task UpdateRecordsAsync(IEnumerable<SeafMetadataUpdate> updates, CancellationToken ct = default)
-        => _core.UpdateRecordsAsync(updates, MetadataApi.MaxBatchSize, ct);
+        => _core.UpdateRecordsAsync(updates, UpdateBatchSize, ct);
 }
 
 /// <summary>Metadata views of a repo-token library.</summary>

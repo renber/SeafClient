@@ -35,9 +35,12 @@ public sealed class AdminGroupsApi
     public Task<SeafAdminGroup> TransferAsync(int groupId, string newOwnerEmail, CancellationToken ct = default)
         => _t.SendAsync<SeafAdminGroup>(HttpMethod.Put, Base(groupId), SeafTransport.Form(("new_owner", newOwnerEmail)), ct);
 
-    /// <summary>Sets a department's quota in MB (-2 = not set). Only valid for departments.</summary>
-    public Task<SeafAdminGroup> SetQuotaAsync(int groupId, long quotaMb, CancellationToken ct = default)
-        => _t.SendAsync<SeafAdminGroup>(HttpMethod.Put, Base(groupId), SeafTransport.Form(("quota", quotaMb.ToString(CultureInfo.InvariantCulture))), ct);
+    /// <summary>
+    /// Sets a department's quota in bytes (-2 removes it). Only valid for departments. The server stores the number as given
+    /// and reports it back unchanged in <see cref="SeafAdminGroup.Quota"/>.
+    /// </summary>
+    public Task<SeafAdminGroup> SetQuotaAsync(int groupId, long quotaBytes, CancellationToken ct = default)
+        => _t.SendAsync<SeafAdminGroup>(HttpMethod.Put, Base(groupId), SeafTransport.Form(("quota", quotaBytes.ToString(CultureInfo.InvariantCulture))), ct);
 
     /// <summary>Moves a department under another department.</summary>
     public Task MoveDepartmentAsync(int groupId, int targetGroupId, CancellationToken ct = default)
