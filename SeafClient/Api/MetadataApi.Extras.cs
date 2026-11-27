@@ -5,18 +5,14 @@ namespace SeafClient.Api;
 
 public sealed partial class MetadataApi
 {
-    private MetadataViewsApi? _views;
-    private MetadataTagsApi? _tags;
-    private MetadataFacesApi? _faces;
-
     /// <summary>Saved views of the metadata table.</summary>
-    public MetadataViewsApi Views => _views ??= new MetadataViewsApi(_t);
+    public MetadataViewsApi Views { get; }
 
     /// <summary>The library tag system (Seafile 13+).</summary>
-    public MetadataTagsApi Tags => _tags ??= new MetadataTagsApi(_t);
+    public MetadataTagsApi Tags { get; }
 
     /// <summary>Face recognition (Seafile 12–13 only; Seafile 14 removed it and answers 404).</summary>
-    public MetadataFacesApi Faces => _faces ??= new MetadataFacesApi(_t);
+    public MetadataFacesApi Faces { get; }
 
     internal MetadataCore Core(string libraryId) => new(_t, Base(libraryId));
 

@@ -109,6 +109,23 @@ public sealed class SeafSession : IDisposable
         }
     }
 
+    /// <summary>
+    /// Creates a session configured with credentials without performing network I/O. The API token is acquired lazily
+    /// on the first authenticated request (single-flight) and automatically refreshed once if the server returns 401.
+    /// Ideal for dependency injection singletons.
+    /// </summary>
+    public static SeafSession Create(Uri serverUri, string username, string password, SeafClientOptions? options = null)
+    {
+        ArgumentNullException.ThrowIfNull(serverUri);
+        ArgumentException.ThrowIfNullOrEmpty(username);
+        ArgumentNullException.ThrowIfNull(password);
+
+        SeafTransport transport = null!;
+        transport = new SeafTransport(serverUri, options ?? new SeafClientOptions(),
+            ct => ObtainTokenAsync(transport, username, password, null, ct));
+        return new SeafSession(transport, username);
+    }
+
     /// <summary>Creates a session from an existing API token (no request is made).</summary>
     public static SeafSession FromToken(Uri serverUri, string token, SeafClientOptions? options = null)
     {

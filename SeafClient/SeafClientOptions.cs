@@ -6,13 +6,22 @@ namespace SeafClient;
 public sealed class SeafClientOptions
 {
     /// <summary>
-    /// An externally managed <see cref="System.Net.Http.HttpClient"/> (e.g. from <c>IHttpClientFactory</c>).
-    /// Its <c>BaseAddress</c> is ignored and it is not disposed by the session.
-    /// When <c>null</c>, the session creates and owns its own client.
+    /// An externally managed <see cref="System.Net.Http.HttpClient"/>. Its <c>BaseAddress</c> is ignored and it is not
+    /// disposed by the session. For long-lived singleton sessions backed by <c>IHttpClientFactory</c>, prefer
+    /// <see cref="HttpClientFactory"/> (<c>() =&gt; factory.CreateClient("seafile")</c>) so handler rotation keeps working.
+    /// When both <see cref="HttpClient"/> and <see cref="HttpClientFactory"/> are <c>null</c>, the session creates and
+    /// owns its own <see cref="System.Net.Http.HttpClient"/>.
     /// </summary>
     public HttpClient? HttpClient { get; set; }
 
-    /// <summary>Timeout for the internally created HttpClient. Ignored when <see cref="HttpClient"/> is supplied.</summary>
+    /// <summary>
+    /// A factory invoked per request to obtain an <see cref="System.Net.Http.HttpClient"/> (e.g.
+    /// <c>() =&gt; httpClientFactory.CreateClient("seafile")</c>). Mutually exclusive with <see cref="HttpClient"/>.
+    /// Clients returned by the factory are not disposed by the session.
+    /// </summary>
+    public Func<HttpClient>? HttpClientFactory { get; set; }
+
+    /// <summary>Timeout for the internally created HttpClient. Ignored when <see cref="HttpClient"/> or <see cref="HttpClientFactory"/> is supplied.</summary>
     public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(5);
 
     /// <summary>

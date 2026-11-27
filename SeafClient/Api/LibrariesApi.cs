@@ -82,7 +82,8 @@ public sealed partial class LibrariesApi
     {
         var users = _t.GetAsync<List<SeafSharedItem>>(Url.Of($"api2/repos/{Url.Seg(libraryId)}/dir/shared_items/").Q("p", SeafPath.Normalize(path)).Q("share_type", "user"), ct);
         var groups = _t.GetAsync<List<SeafSharedItem>>(Url.Of($"api2/repos/{Url.Seg(libraryId)}/dir/shared_items/").Q("p", SeafPath.Normalize(path)).Q("share_type", "group"), ct);
-        return [.. await users.ConfigureAwait(false), .. await groups.ConfigureAwait(false)];
+        await Task.WhenAll(users, groups).ConfigureAwait(false);
+        return [.. users.Result, .. groups.Result];
     }
 
     public Task ShareWithGroupAsync(string libraryId, int groupId, SeafSharePermission permission = SeafSharePermission.Rw, string path = "/", CancellationToken ct = default)

@@ -20,7 +20,13 @@ public sealed partial class MetadataApi
     internal int ExtractBatchSize { get; set; } = 50;
 
     private readonly SeafTransport _t;
-    internal MetadataApi(SeafTransport t) => _t = t;
+    internal MetadataApi(SeafTransport t)
+    {
+        _t = t;
+        Views = new MetadataViewsApi(t);
+        Tags = new MetadataTagsApi(t);
+        Faces = new MetadataFacesApi(t);
+    }
 
     private static string Base(string libraryId) => $"api/v2.1/repos/{Url.Seg(libraryId)}/metadata/";
 

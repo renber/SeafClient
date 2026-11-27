@@ -17,7 +17,8 @@ public sealed class AdminSharesApi
     {
         var users = _t.GetAsync<List<SeafAdminShare>>(Url.Of(Base).Q("repo_id", libraryId).Q("path", SeafPath.Normalize(path)).Q("share_type", "user"), ct);
         var groups = _t.GetAsync<List<SeafAdminShare>>(Url.Of(Base).Q("repo_id", libraryId).Q("path", SeafPath.Normalize(path)).Q("share_type", "group"), ct);
-        return [.. await users.ConfigureAwait(false), .. await groups.ConfigureAwait(false)];
+        await Task.WhenAll(users, groups).ConfigureAwait(false);
+        return [.. users.Result, .. groups.Result];
     }
 
     /// <summary>Shares a library folder with users; per-user failures are reported in the result rather than thrown.</summary>

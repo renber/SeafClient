@@ -10,23 +10,33 @@ namespace SeafClient.Internal;
 /// </summary>
 internal sealed class SeafTransport : IDisposable
 {
-    private readonly HttpClient _http;
+    private readonly HttpClient? _http;
+    private readonly Func<HttpClient>? _httpFactory;
     private readonly bool _ownsHttp;
     private readonly SeafClientOptions _options;
+    private readonly Func<CancellationToken, Task<string>>? _tokenProvider;
+    private readonly SemaphoreSlim? _tokenLock;
+    private volatile string? _token;
+    private volatile bool _disposed;
 
-    public SeafTransport(Uri serverUri, SeafClientOptions options)
+    public SeafTransport(Uri serverUri, SeafClientOptions options, Func<CancellationToken, Task<string>>? tokenProvider = null)
     {
         if (!serverUri.IsAbsoluteUri) throw new ArgumentException("The server URI must be absolute.", nameof(serverUri));
+        if (options.HttpClient != null && options.HttpClientFactory != null)
+            throw new ArgumentException("Specify either HttpClient or HttpClientFactory, not both.", nameof(options));
 
         // Treat the server URI as a directory so relative API paths resolve under any sub-path (e.g. https://host/seafile/).
         ServerUri = serverUri.AbsoluteUri.EndsWith('/') ? serverUri : new Uri(serverUri.AbsoluteUri + "/");
         _options = options;
+        _httpFactory = options.HttpClientFactory;
+        _tokenProvider = tokenProvider;
+        _tokenLock = tokenProvider != null ? new SemaphoreSlim(1, 1) : null;
 
         if (options.HttpClient != null)
         {
             _http = options.HttpClient;
         }
-        else
+        else if (_httpFactory == null)
         {
             _http = new HttpClient(new SocketsHttpHandler
             {
@@ -39,8 +49,7 @@ internal sealed class SeafTransport : IDisposable
     }
 
     public Uri ServerUri { get; }
-    public string? Token { get; set; }
-    public HttpClient Http => _http;
+    public string? Token { get => _token; set => _token = value; }
 
     public Uri Resolve(string relativeOrAbsolute)
     {
@@ -107,30 +116,37 @@ internal sealed class SeafTransport : IDisposable
     /// </summary>
     public async Task<HttpResponseMessage> SendRawAsync(HttpMethod method, string url, Func<HttpContent>? content, HttpCompletionOption completion, CancellationToken ct, bool authenticate = true, Action<HttpRequestMessage>? configure = null)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
         var uri = Resolve(url);
         var idempotent = method == HttpMethod.Get || method == HttpMethod.Head || method == HttpMethod.Put || method == HttpMethod.Delete;
+        var activeToken = authenticate ? await EnsureTokenAsync(ct).ConfigureAwait(false) : null;
+        var authRefreshed = false;
 
-        for (var attempt = 0; ; attempt++)
+        for (var attempt = 0; ; )
         {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+
             using var request = new HttpRequestMessage(method, uri);
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             request.Headers.UserAgent.ParseAdd(_options.UserAgent);
-            if (authenticate && Token != null)
-                request.Headers.Authorization = new AuthenticationHeaderValue("Token", Token);
+            if (authenticate && activeToken != null)
+                request.Headers.Authorization = new AuthenticationHeaderValue("Token", activeToken);
             if (content != null)
                 request.Content = content();
             configure?.Invoke(request);
 
+            var client = _httpFactory?.Invoke() ?? _http!;
             HttpResponseMessage response;
             try
             {
-                response = await _http.SendAsync(request, completion, ct).ConfigureAwait(false);
+                response = await client.SendAsync(request, completion, ct).ConfigureAwait(false);
             }
             catch (HttpRequestException ex)
             {
                 if (idempotent && attempt < _options.MaxRetries)
                 {
-                    await Task.Delay(Backoff(attempt, null), ct).ConfigureAwait(false);
+                    await Task.Delay(Backoff(attempt++, null), ct).ConfigureAwait(false);
                     continue;
                 }
                 throw new SeafConnectionException(ex.Message, method, uri, ex);
@@ -139,7 +155,7 @@ internal sealed class SeafTransport : IDisposable
             {
                 if (idempotent && attempt < _options.MaxRetries)
                 {
-                    await Task.Delay(Backoff(attempt, null), ct).ConfigureAwait(false);
+                    await Task.Delay(Backoff(attempt++, null), ct).ConfigureAwait(false);
                     continue;
                 }
                 throw new SeafTimeoutException(method, uri, ex);
@@ -149,6 +165,14 @@ internal sealed class SeafTransport : IDisposable
                 return response;
 
             var status = response.StatusCode;
+            if (status == HttpStatusCode.Unauthorized && authenticate && _tokenProvider != null && !authRefreshed)
+            {
+                response.Dispose();
+                activeToken = await RefreshTokenAsync(activeToken, ct).ConfigureAwait(false);
+                authRefreshed = true;
+                continue;
+            }
+
             var retryAfter = GetRetryAfter(response);
             var retryable = status == HttpStatusCode.TooManyRequests
                 || (idempotent && status is HttpStatusCode.RequestTimeout or HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout);
@@ -156,7 +180,7 @@ internal sealed class SeafTransport : IDisposable
             if (retryable && attempt < _options.MaxRetries)
             {
                 response.Dispose();
-                await Task.Delay(Backoff(attempt, retryAfter), ct).ConfigureAwait(false);
+                await Task.Delay(Backoff(attempt++, retryAfter), ct).ConfigureAwait(false);
                 continue;
             }
 
@@ -169,6 +193,37 @@ internal sealed class SeafTransport : IDisposable
             if (status == HttpStatusCode.TooManyRequests)
                 throw new SeafRateLimitException(message, retryAfter, body, method, uri);
             throw new SeafException(status, message, body, method, uri);
+        }
+    }
+
+    private async Task<string?> EnsureTokenAsync(CancellationToken ct)
+    {
+        if (_token is { } tok) return tok;
+        if (_tokenProvider == null) return null;
+
+        await _tokenLock!.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            return _token ??= await _tokenProvider(ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            _tokenLock.Release();
+        }
+    }
+
+    private async Task<string> RefreshTokenAsync(string? failedToken, CancellationToken ct)
+    {
+        await _tokenLock!.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            if (_token is { } current && current != failedToken)
+                return current;
+            return _token = await _tokenProvider!(ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            _tokenLock.Release();
         }
     }
 
@@ -243,7 +298,10 @@ internal sealed class SeafTransport : IDisposable
 
     public void Dispose()
     {
-        if (_ownsHttp) _http.Dispose();
+        if (_disposed) return;
+        _disposed = true;
+        if (_ownsHttp) _http?.Dispose();
+        _tokenLock?.Dispose();
     }
 }
 
