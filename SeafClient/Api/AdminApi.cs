@@ -8,9 +8,9 @@ namespace SeafClient.Api;
 /// </summary>
 public sealed class AdminApi
 {
-    internal AdminApi(SeafTransport t, AdminUsersApi users)
+    internal AdminApi(SeafTransport t)
     {
-        Users = users;
+        Users = new AdminUsersApi(t);
         Groups = new AdminGroupsApi(t);
         Libraries = new AdminLibrariesApi(t);
         Departments = new AdminDepartmentsApi(t);
@@ -21,7 +21,7 @@ public sealed class AdminApi
         Notifications = new AdminNotificationsApi(t);
     }
 
-    /// <summary>User accounts (same instance as <see cref="SeafSession.AdminUsers"/>).</summary>
+    /// <summary>User accounts.</summary>
     public AdminUsersApi Users { get; }
 
     public AdminGroupsApi Groups { get; }

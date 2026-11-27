@@ -5,7 +5,7 @@ using SeafClient.Models;
 namespace SeafClient.Api;
 
 /// <summary>User management via the admin API. Requires a staff (system admin) account.</summary>
-public sealed partial class AdminUsersApi
+public sealed class AdminUsersApi
 {
     private readonly SeafTransport _t;
     internal AdminUsersApi(SeafTransport t) => _t = t;
@@ -68,6 +68,14 @@ public sealed partial class AdminUsersApi
 
     public Task DeleteAsync(string email, CancellationToken ct = default)
         => _t.SendAsync(HttpMethod.Delete, $"api/v2.1/admin/users/{Url.Seg(email)}/", null, ct);
+
+    /// <summary>Lists the libraries a user has shared with other users and groups.</summary>
+    public async Task<IReadOnlyList<SeafUserSharedRepo>> ListSharedLibrariesAsync(string email, CancellationToken ct = default)
+        => await _t.GetAsync<List<SeafUserSharedRepo>>($"api/v2.1/admin/users/{Url.Seg(email)}/shared-repos/", ct).ConfigureAwait(false);
+
+    /// <summary>Lists the folders (inside libraries) a user has shared with other users and groups.</summary>
+    public async Task<IReadOnlyList<SeafUserSharedFolder>> ListSharedFoldersAsync(string email, CancellationToken ct = default)
+        => await _t.GetAsync<List<SeafUserSharedFolder>>($"api/v2.1/admin/users/{Url.Seg(email)}/shared-folders/", ct).ConfigureAwait(false);
 
     private static string? Bool(bool? b) => b == null ? null : b.Value ? "true" : "false";
 

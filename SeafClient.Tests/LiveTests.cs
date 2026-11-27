@@ -389,21 +389,21 @@ public class AdminAndMetadataTests(LiveFixture f)
         var account = await f.Session.Server.GetAccountInfoAsync();
         if (!account.IsStaff) return;
 
-        var page = await f.Session.AdminUsers.ListAsync(1, 2);
+        var page = await f.Session.Admin.Users.ListAsync(1, 2);
         Assert.True(page.TotalCount >= 1);
         Assert.InRange(page.Items.Count, 1, 2);
 
         var all = new List<SeafUser>();
-        await foreach (var u in f.Session.AdminUsers.ListAllAsync(perPage: 1)) all.Add(u);
+        await foreach (var u in f.Session.Admin.Users.ListAllAsync(perPage: 1)) all.Add(u);
         Assert.Equal(page.TotalCount, all.Count);
 
-        var me = await f.Session.AdminUsers.GetAsync(account.Email);
+        var me = await f.Session.Admin.Users.GetAsync(account.Email);
         Assert.True(me.IsStaff);
         Assert.True(me.IsActive);
         Assert.NotNull(me.Created);
 
-        Assert.Null(await f.Session.AdminUsers.TryGetAsync("nobody-" + Guid.NewGuid().ToString("N") + "@example.com"));
-        Assert.Contains(await f.Session.AdminUsers.SearchAsync(account.Name), u => u.Email == account.Email);
+        Assert.Null(await f.Session.Admin.Users.TryGetAsync("nobody-" + Guid.NewGuid().ToString("N") + "@example.com"));
+        Assert.Contains(await f.Session.Admin.Users.SearchAsync(account.Name), u => u.Email == account.Email);
     }
 
     [LiveFact]

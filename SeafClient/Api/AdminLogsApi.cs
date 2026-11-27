@@ -16,31 +16,31 @@ public sealed class AdminLogsApi
     private const string Base = "api/v2.1/admin/logs/";
 
     /// <summary>Lists login attempts, newest first, optionally only for some users.</summary>
-    public async Task<SeafListPage<SeafLoginLog>> ListLoginsAsync(int page = 1, int perPage = 100, IEnumerable<string>? emails = null, CancellationToken ct = default)
+    public async Task<SeafPage<SeafLoginLog>> ListLoginsAsync(int page = 1, int perPage = 100, IEnumerable<string>? emails = null, CancellationToken ct = default)
     {
         var r = await _t.GetAsync<LoginResponse>(Paged("login-logs/", page, perPage, ("email", emails)), ct).ConfigureAwait(false);
-        return new SeafListPage<SeafLoginLog> { Items = r.LoginLogList, Page = page, PerPage = perPage, TotalCount = r.TotalCount, HasNextPage = page * perPage < r.TotalCount };
+        return new SeafPage<SeafLoginLog> { Items = r.LoginLogList, Page = page, PerPage = perPage, TotalCount = r.TotalCount, HasNextPage = page * perPage < r.TotalCount };
     }
 
     /// <summary>Lists file access events (downloads, views), newest first.</summary>
-    public async Task<SeafListPage<SeafFileAccessLog>> ListFileAccessAsync(int page = 1, int perPage = 100, IEnumerable<string>? emails = null, IEnumerable<string>? libraryIds = null, CancellationToken ct = default)
+    public async Task<SeafPage<SeafFileAccessLog>> ListFileAccessAsync(int page = 1, int perPage = 100, IEnumerable<string>? emails = null, IEnumerable<string>? libraryIds = null, CancellationToken ct = default)
     {
         var r = await _t.GetAsync<FileAccessResponse>(Paged("file-access-logs/", page, perPage, ("email", emails), ("repo", libraryIds)), ct).ConfigureAwait(false);
-        return new SeafListPage<SeafFileAccessLog> { Items = r.FileAccessLogList, Page = page, PerPage = perPage, HasNextPage = r.HasNextPage };
+        return new SeafPage<SeafFileAccessLog> { Items = r.FileAccessLogList, Page = page, PerPage = perPage, HasNextPage = r.HasNextPage };
     }
 
     /// <summary>Lists file changes, newest first.</summary>
-    public async Task<SeafListPage<SeafFileUpdateLog>> ListFileUpdatesAsync(int page = 1, int perPage = 100, IEnumerable<string>? emails = null, IEnumerable<string>? libraryIds = null, CancellationToken ct = default)
+    public async Task<SeafPage<SeafFileUpdateLog>> ListFileUpdatesAsync(int page = 1, int perPage = 100, IEnumerable<string>? emails = null, IEnumerable<string>? libraryIds = null, CancellationToken ct = default)
     {
         var r = await _t.GetAsync<FileUpdateResponse>(Paged("file-update-logs/", page, perPage, ("email", emails), ("repo", libraryIds)), ct).ConfigureAwait(false);
-        return new SeafListPage<SeafFileUpdateLog> { Items = r.FileUpdateLogList, Page = page, PerPage = perPage, HasNextPage = r.HasNextPage };
+        return new SeafPage<SeafFileUpdateLog> { Items = r.FileUpdateLogList, Page = page, PerPage = perPage, HasNextPage = r.HasNextPage };
     }
 
     /// <summary>Lists share permission changes, newest first.</summary>
-    public async Task<SeafListPage<SeafSharePermissionLog>> ListSharePermissionsAsync(int page = 1, int perPage = 100, IEnumerable<string>? fromEmails = null, IEnumerable<string>? toEmails = null, IEnumerable<string>? libraryIds = null, CancellationToken ct = default)
+    public async Task<SeafPage<SeafSharePermissionLog>> ListSharePermissionsAsync(int page = 1, int perPage = 100, IEnumerable<string>? fromEmails = null, IEnumerable<string>? toEmails = null, IEnumerable<string>? libraryIds = null, CancellationToken ct = default)
     {
         var r = await _t.GetAsync<SharePermissionResponse>(Paged("share-permission-logs/", page, perPage, ("from_email", fromEmails), ("to_email", toEmails), ("repo", libraryIds)), ct).ConfigureAwait(false);
-        return new SeafListPage<SeafSharePermissionLog> { Items = r.SharePermissionLogList, Page = page, PerPage = perPage, HasNextPage = r.HasNextPage };
+        return new SeafPage<SeafSharePermissionLog> { Items = r.SharePermissionLogList, Page = page, PerPage = perPage, HasNextPage = r.HasNextPage };
     }
 
     // ---- date-range endpoints (whole days, server time) ----

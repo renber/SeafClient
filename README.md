@@ -7,8 +7,8 @@ Version 2 is a ground-up rewrite targeting **Seafile 11–14** (tested against S
 - `net8.0` / `net10.0`, `System.Text.Json`, no third-party dependencies
 - Resource-grouped API: `session.Files`, `session.Directories`, `session.ShareLinks`, ...
 - Uses the current `api/v2.1` endpoints, falling back to `api2` only where v2.1 has no equivalent
-- Typed errors (`SeafException` with `StatusCode`, `IsNotFound`, ...), automatic retries on 429 and transient 5xx
-- Every call takes a `CancellationToken`; works with `IHttpClientFactory`
+- Typed errors (`SeafException` with `StatusCode`, `IsNotFound`, `IsUnauthorized`, `IsForbidden`, `IsTransient`, plus `SeafConnectionException` and `SeafTimeoutException`), automatic retries on 429, 408, transient 5xx, and network/timeout errors
+- Every call takes a `CancellationToken`; DI-safe lazy auth via `SeafSession.Create(...)` and `IHttpClientFactory` support
 
 ## Quick start
 
@@ -35,7 +35,7 @@ var (link, created) = await seaf.ShareLinks.GetOrCreateAsync(lib.Id, uploaded.Pa
     new SeafShareLinkOptions { ExpiresAt = DateTimeOffset.Now.AddDays(7), Password = "s3cret-pass" });
 ```
 
-An existing API token can be used directly: `SeafSession.FromToken(serverUri, token)`.
+An existing API token can be used directly: `SeafSession.FromToken(serverUri, token)`, or create a synchronous lazy-authenticating session for DI containers with `SeafSession.Create(serverUri, username, password, options)`.
 
 ### Library (repo) API tokens
 
@@ -70,8 +70,8 @@ On Seafile 14 some tag operations (file tags, tag files, tag links) fail through
 | `FileTags` | Legacy library tags and file tags (`repo-tags`) |
 | `Search` | `SearchFilesAsync` (full-text; needs a search backend), `SearchFileNamesAsync`, `SearchUsersAsync` |
 | `Invitations` | Guest invitations: list, create (single/many), get, delete, revoke |
-| `Metadata` | `GetStatusAsync`, `SetEnabledAsync`, records (`GetRecordAsync`, `GetRecordByIdAsync`, `ListRecordsAsync`, `UpdateRecordsAsync` auto-batched, `UpdateRecordByPathAsync`), columns, details settings, `ExtractFileDetailsAsync`, OCR; `.Views` (CRUD, move, duplicate, view folders), `.Tags` (CRUD, file tags, tag links, merge), `.Faces` (Seafile 13 only) |
-| `Admin` | `Users`, `Groups`, `Libraries` (incl. trash and history settings), `Departments`, `Logs`, `Organizations`, `Shares`, `ShareLinks`, `Notifications` (staff only). `session.AdminUsers` is the same instance as `Admin.Users`. |
+| `Metadata` | `GetStatusAsync`, `SetEnabledAsync`, records (`GetRecordAsync`, `GetRecordByIdAsync`, `ListRecordsAsync`, `UpdateRecordsAsync` auto-batched, `UpdateRecordByPathAsync`), columns, details settings, `ExtractFileDetailsAsync`; `.Views` (CRUD, move, duplicate, view folders), `.Tags` (CRUD, file tags, tag links, merge) |
+| `Admin` | `Users`, `Groups`, `Libraries` (incl. trash and history settings), `Departments`, `Logs`, `Organizations`, `Shares`, `ShareLinks`, `Notifications` (staff only) |
 
 `SeafPath` normalizes and combines library paths (`SeafPath.Combine("42", "Uploads/", "/2026")` → `/42/Uploads/2026`).
 All returned paths are normalized (leading `/`, no trailing `/`).
@@ -92,10 +92,10 @@ All returned paths are normalized (leading `/`, no trailing `/`).
 ```csharp
 var options = new SeafClientOptions
 {
-    HttpClient = httpClientFactory.CreateClient("seafile"), // optional; not disposed by the session
-    MaxRetries = 3,                                          // 429 always; 502/503/504 + network errors for GET/PUT/DELETE
-    RetryBaseDelay = TimeSpan.FromSeconds(1),                // exponential backoff unless the server sends Retry-After
-    Timeout = TimeSpan.FromMinutes(5),                       // only for the internally created HttpClient
+    HttpClientFactory = () => httpClientFactory.CreateClient("seafile"), // recommended for DI; or pass HttpClient directly
+    MaxRetries = 3,                                                       // 429 always; 408/502/503/504 + network/timeout errors for GET/HEAD/PUT/DELETE
+    RetryBaseDelay = TimeSpan.FromSeconds(1),                             // exponential backoff with jitter unless the server sends Retry-After
+    Timeout = TimeSpan.FromMinutes(5),                                    // only for the internally created HttpClient
 };
 ```
 

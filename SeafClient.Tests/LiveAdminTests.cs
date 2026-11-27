@@ -14,9 +14,6 @@ public class AdminApiTests(LiveFixture f)
     }
 
     [LiveFact]
-    public void AdminUsers_IsSameInstance() => Assert.Same(f.Session.AdminUsers, f.Session.Admin.Users);
-
-    [LiveFact]
     public async Task Groups_Crud_Members_Libraries()
     {
         var admin = f.Session.Admin.Groups;

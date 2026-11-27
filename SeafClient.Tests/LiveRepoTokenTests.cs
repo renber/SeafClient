@@ -137,7 +137,7 @@ public class RepoTokenTests(LiveFixture f) : IAsyncLifetime
         // Move with merge: /dst/alpha + /docs/alpha are merged instead of producing "alpha (1)".
         await repo.Directories.EnsureAsync("/dst/alpha");
         await repo.Files.CreateAsync("/dst/alpha/extra.txt");
-        await repo.Directories.MoveWithMergeAsync("/dst/alpha", "/docs");
+        await repo.Directories.MoveMergeAsync("/dst/alpha", "/docs");
         Assert.True(await repo.Files.ExistsAsync("/docs/alpha/extra.txt"));
         Assert.True(await repo.Files.ExistsAsync("/docs/alpha/empty.txt"));
         Assert.False(await repo.Directories.ExistsAsync("/dst/alpha"));

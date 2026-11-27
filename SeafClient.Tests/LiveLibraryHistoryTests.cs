@@ -222,7 +222,7 @@ public class LibraryHistoryTests(LiveFixture f)
 
     private async Task<string?> FirstOtherUser()
     {
-        var page = await S.AdminUsers.ListAsync(1, 50);
+        var page = await S.Admin.Users.ListAsync(1, 50);
         return page.Items.FirstOrDefault(u => u.IsActive && !u.Email.Equals(LiveServer.User, StringComparison.OrdinalIgnoreCase))?.Email;
     }
 

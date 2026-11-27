@@ -43,7 +43,7 @@ public static class LiveKit
     public static async Task<IReadOnlyList<string>> OtherUsersAsync(SeafSession s)
     {
         var me = (await s.Server.GetAccountInfoAsync()).Email;
-        var page = await s.AdminUsers.ListAsync(1, 100);
+        var page = await s.Admin.Users.ListAsync(1, 100);
         return page.Items.Where(u => u.IsActive && !string.Equals(u.Email, me, StringComparison.OrdinalIgnoreCase)).Select(u => u.Email).ToList();
     }
 

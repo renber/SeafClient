@@ -39,8 +39,7 @@ public sealed class SeafSession : IDisposable
         FileComments = new FileCommentsApi(transport);
         FileTags = new FileTagsApi(transport);
         Invitations = new InvitationsApi(transport);
-        AdminUsers = new AdminUsersApi(transport);
-        Admin = new AdminApi(transport, AdminUsers);
+        Admin = new AdminApi(transport);
     }
 
     /// <summary>The server base URI (always ends with '/').</summary>
@@ -77,9 +76,6 @@ public sealed class SeafSession : IDisposable
     public FileTagsApi FileTags { get; }
 
     public InvitationsApi Invitations { get; }
-
-    /// <summary>Same instance as <see cref="AdminApi.Users"/>; kept for convenience.</summary>
-    public AdminUsersApi AdminUsers { get; }
 
     /// <summary>System administration (staff accounts only).</summary>
     public AdminApi Admin { get; }

@@ -86,7 +86,8 @@ public sealed partial class UploadLinksApi
     public async Task<SeafUploadedFile> UploadAsync(string token, string fileName, Stream content, SeafUploadOptions? options = null, CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(fileName);
-        if (fileName.Contains('/')) throw new ArgumentException("File name must not contain '/'.", nameof(fileName));
+        if (fileName.Contains('/') || fileName.Contains('\\')) throw new ArgumentException("File name must not contain '/' or '\\'.", nameof(fileName));
+        ArgumentNullException.ThrowIfNull(content);
         options ??= new SeafUploadOptions();
 
         var linkTask = GetAsync(token, ct);

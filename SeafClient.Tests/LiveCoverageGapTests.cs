@@ -239,35 +239,6 @@ public class CoverageGapTests(LiveFixture f)
     }
 
     [LiveFact]
-    public async Task Metadata_FaceRecognition_RemovedInSeafile14()
-    {
-        var lib = await LiveKit.TempLibrary(S, "SeafClientFace");
-        try
-        {
-            await S.Metadata.SetEnabledAsync(lib.Id, true);
-            var calls = new Func<Task>[]
-            {
-                () => S.Metadata.Faces.DisableAsync(lib.Id),
-                () => S.Metadata.Faces.RenamePersonAsync(lib.Id, "p1", "Someone"),
-                () => S.Metadata.Faces.ListPhotosAsync(lib.Id, "p1"),
-                () => S.Metadata.Faces.AddPhotosAsync(lib.Id, ["p1"], ["r1"]),
-                () => S.Metadata.Faces.RemovePhotosAsync(lib.Id, "p1", ["r1"]),
-                () => S.Metadata.Faces.SetCoverPhotoAsync(lib.Id, "p1", "r1"),
-            };
-            var version = (await S.Server.GetInfoAsync()).ParsedVersion;
-            foreach (var call in calls)
-            {
-                var ex = await Assert.ThrowsAsync<SeafException>(call);
-                if (version?.Major >= 14) Assert.True(ex.IsNotFound, ex.ToString());
-            }
-        }
-        finally
-        {
-            await S.Libraries.DeleteAsync(lib.Id);
-        }
-    }
-
-    [LiveFact]
     public async Task RepoToken_LocalUpload_Downloads()
     {
         var lib = await LiveKit.TempLibrary(S, "SeafClientRTgap");

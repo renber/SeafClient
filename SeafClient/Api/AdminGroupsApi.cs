@@ -13,10 +13,10 @@ public sealed class AdminGroupsApi
     private static string Base(int groupId) => $"api/v2.1/admin/groups/{groupId}/";
 
     /// <summary>Lists groups (and departments) one page at a time. Pass <paramref name="name"/> to filter by name.</summary>
-    public async Task<SeafListPage<SeafAdminGroup>> ListAsync(int page = 1, int perPage = 100, string? name = null, CancellationToken ct = default)
+    public async Task<SeafPage<SeafAdminGroup>> ListAsync(int page = 1, int perPage = 100, string? name = null, CancellationToken ct = default)
     {
         var r = await _t.GetAsync<GroupListResponse>(Url.Of("api/v2.1/admin/groups/").Q("page", page).Q("per_page", perPage).Q("name", name), ct).ConfigureAwait(false);
-        return new SeafListPage<SeafAdminGroup> { Items = r.Groups, Page = page, PerPage = perPage, HasNextPage = r.PageInfo?.HasNextPage ?? false };
+        return new SeafPage<SeafAdminGroup> { Items = r.Groups, Page = page, PerPage = perPage, HasNextPage = r.PageInfo?.HasNextPage ?? false };
     }
 
     /// <summary>Searches groups by name.</summary>

@@ -31,11 +31,13 @@ public sealed record SeafUser
 /// <summary>A page of results from a paginated admin endpoint.</summary>
 public sealed record SeafPage<T>
 {
+    private readonly bool? _hasNextPage;
+
     public IReadOnlyList<T> Items { get; init; } = [];
-    public int TotalCount { get; init; }
+    public int? TotalCount { get; init; }
     public int Page { get; init; }
     public int PerPage { get; init; }
-    public bool HasNextPage => Page * PerPage < TotalCount;
+    public bool HasNextPage { get => _hasNextPage ?? (TotalCount is { } total && Page * PerPage < total); init => _hasNextPage = value; }
 }
 
 /// <summary>Fields for creating a user via the admin API.</summary>

@@ -239,6 +239,23 @@ public class FilesAccountUnitTests
         Assert.True(content.Disposed);
     }
 
+    [Fact]
+    public async Task Upload_ValidatesFileNameBackslashAndNullContent()
+    {
+        using var s = SeafSession.FromToken(new Uri("http://seaf.test/"), "tok", new SeafClientOptions { HttpClient = new HttpClient(new SequenceHandler((_, _) => throw new InvalidOperationException())) });
+        using var ms = new MemoryStream([1]);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => s.Files.UploadAsync("r", "/", @"sub\file.txt", ms));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => s.Files.UploadAsync("r", "/", "ok.txt", null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => s.Files.UpdateAsync("r", "/ok.txt", null!));
+        await Assert.ThrowsAsync<ArgumentException>(() => s.UploadLinks.UploadAsync("tok", @"sub\file.txt", ms));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => s.UploadLinks.UploadAsync("tok", "ok.txt", null!));
+
+        using var repo = SeafRepoTokenSession.FromToken(new Uri("http://seaf.test/"), "tok", new SeafClientOptions { HttpClient = new HttpClient(new SequenceHandler((_, _) => throw new InvalidOperationException())) });
+        await Assert.ThrowsAsync<ArgumentException>(() => repo.Files.UploadAsync("/", @"sub\file.txt", ms));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => repo.Files.UploadAsync("/", "ok.txt", null!));
+    }
+
     private sealed class SyncProgress(Action<long> onReport) : IProgress<long>
     {
         public void Report(long value) => onReport(value);

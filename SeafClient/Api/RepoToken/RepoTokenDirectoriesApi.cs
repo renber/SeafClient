@@ -111,7 +111,7 @@ public sealed class RepoTokenDirectoriesApi
     /// Moves a directory into <paramref name="destinationDir"/>, merging its contents into an existing folder of the same
     /// name there instead of creating <c>name (1)</c>.
     /// </summary>
-    public Task MoveWithMergeAsync(string path, string destinationDir, CancellationToken ct = default)
+    public Task MoveMergeAsync(string path, string destinationDir, CancellationToken ct = default)
     {
         path = SeafPath.Normalize(path);
         return _c.T.SendAsync(HttpMethod.Post, RepoTokenContext.Base + "move-dir/", SeafTransport.Json(new

@@ -14,10 +14,10 @@ public sealed class AdminLibrariesApi
 
     /// <summary>Lists all libraries one page at a time.</summary>
     /// <param name="orderBy"><c>size</c> or <c>file_count</c> (descending); null for the server default.</param>
-    public async Task<SeafListPage<SeafAdminLibrary>> ListAsync(int page = 1, int perPage = 100, string? orderBy = null, CancellationToken ct = default)
+    public async Task<SeafPage<SeafAdminLibrary>> ListAsync(int page = 1, int perPage = 100, string? orderBy = null, CancellationToken ct = default)
     {
         var r = await _t.GetAsync<ReposResponse>(Url.Of("api/v2.1/admin/libraries/").Q("page", page).Q("per_page", perPage).Q("order_by", orderBy), ct).ConfigureAwait(false);
-        return new SeafListPage<SeafAdminLibrary> { Items = r.Repos, Page = page, PerPage = perPage, HasNextPage = r.PageInfo?.HasNextPage ?? false };
+        return new SeafPage<SeafAdminLibrary> { Items = r.Repos, Page = page, PerPage = perPage, HasNextPage = r.PageInfo?.HasNextPage ?? false };
     }
 
     /// <summary>Finds libraries by (partial) name and/or exact owner. Not paginated.</summary>
@@ -78,10 +78,10 @@ public sealed class AdminLibrariesApi
     // ---- system library trash ----
 
     /// <summary>Lists deleted libraries one page at a time, optionally only those of one owner (then not paginated).</summary>
-    public async Task<SeafListPage<SeafTrashLibrary>> ListTrashAsync(int page = 1, int perPage = 100, string? ownerEmail = null, CancellationToken ct = default)
+    public async Task<SeafPage<SeafTrashLibrary>> ListTrashAsync(int page = 1, int perPage = 100, string? ownerEmail = null, CancellationToken ct = default)
     {
         var r = await _t.GetAsync<TrashResponse>(Url.Of("api/v2.1/admin/trash-libraries/").Q("page", page).Q("per_page", perPage).Q("owner", ownerEmail), ct).ConfigureAwait(false);
-        return new SeafListPage<SeafTrashLibrary> { Items = r.Repos, Page = page, PerPage = perPage, HasNextPage = r.PageInfo?.HasNextPage ?? false };
+        return new SeafPage<SeafTrashLibrary> { Items = r.Repos, Page = page, PerPage = perPage, HasNextPage = r.PageInfo?.HasNextPage ?? false };
     }
 
     /// <summary>Restores a deleted library from the trash.</summary>

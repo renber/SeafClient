@@ -10,7 +10,7 @@ namespace SeafClient.Api;
 /// <see cref="CreateAsync"/> therefore checks first and throws a 409 <see cref="SeafException"/>, and
 /// <see cref="EnsureAsync"/> is the idempotent "create if missing" variant.
 /// </remarks>
-public sealed partial class DirectoriesApi
+public sealed class DirectoriesApi
 {
     private readonly SeafTransport _t;
     private readonly ItemsApi _items;
@@ -138,6 +138,32 @@ public sealed partial class DirectoriesApi
     /// <summary>Moves a directory into <paramref name="destinationDir"/>.</summary>
     public Task MoveAsync(string libraryId, string path, string destinationLibraryId, string destinationDir, CancellationToken ct = default)
         => _items.MoveAsync(libraryId, SeafPath.GetParent(path), [SeafPath.GetName(path)], destinationLibraryId, destinationDir, ct);
+
+    /// <summary>
+    /// Moves the directory <paramref name="sourcePath"/> into <paramref name="destinationParentDir"/>, merging it with a
+    /// same-named directory there instead of creating <c>name (1)</c>. Without a same-named directory it behaves like a move.
+    /// </summary>
+    public Task MoveMergeAsync(string sourceLibraryId, string sourcePath, string destinationLibraryId, string destinationParentDir, CancellationToken ct = default)
+    {
+        sourcePath = SeafPath.Normalize(sourcePath);
+        if (sourcePath == "/") throw new ArgumentException("The library root cannot be moved.", nameof(sourcePath));
+        return _t.SendAsync(HttpMethod.Post, "api/v2.1/move-folder-merge/", SeafTransport.Json(new
+        {
+            src_repo_id = sourceLibraryId,
+            src_parent_dir = SeafPath.GetParent(sourcePath),
+            src_dirent_name = SeafPath.GetName(sourcePath),
+            dst_repo_id = destinationLibraryId,
+            dst_parent_dir = SeafPath.Normalize(destinationParentDir),
+        }), ct);
+    }
+
+    /// <summary>
+    /// Restores a directory (recursively) to its state at <paramref name="commitId"/>. If the directory no longer exists
+    /// it is recreated. Creates a new commit; nothing is lost.
+    /// </summary>
+    public Task RevertAsync(string libraryId, string path, string commitId, CancellationToken ct = default)
+        => _t.SendAsync(HttpMethod.Put, $"api2/repos/{Url.Seg(libraryId)}/dir/revert/",
+            SeafTransport.Form(("p", SeafPath.Normalize(path)), ("commit_id", commitId)), ct);
 
     private sealed record DirListResponse { public List<SeafDirEntry> DirentList { get; init; } = []; }
 }

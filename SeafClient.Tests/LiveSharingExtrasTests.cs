@@ -13,7 +13,7 @@ public class SharingExtrasTests(LiveFixture f)
     private async Task<string?> OtherUserAsync()
     {
         var me = (await S.Server.GetAccountInfoAsync()).Email;
-        var page = await S.AdminUsers.ListAsync(1, 25);
+        var page = await S.Admin.Users.ListAsync(1, 25);
         return page.Items.FirstOrDefault(u => !string.Equals(u.Email, me, StringComparison.OrdinalIgnoreCase) && u.IsActive)?.Email;
     }
 

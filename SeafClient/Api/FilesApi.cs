@@ -121,7 +121,8 @@ public sealed partial class FilesApi
     public async Task<SeafUploadedFile> UploadAsync(string libraryId, string parentDir, string fileName, Stream content, SeafUploadOptions? options = null, CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(fileName);
-        if (fileName.Contains('/')) throw new ArgumentException("File name must not contain '/'.", nameof(fileName));
+        if (fileName.Contains('/') || fileName.Contains('\\')) throw new ArgumentException("File name must not contain '/' or '\\'.", nameof(fileName));
+        ArgumentNullException.ThrowIfNull(content);
         options ??= new SeafUploadOptions();
         parentDir = SeafPath.Normalize(parentDir);
 
@@ -151,6 +152,7 @@ public sealed partial class FilesApi
     /// <summary>Overwrites the content of an existing file, keeping its history. Returns the new object id.</summary>
     public async Task<string> UpdateAsync(string libraryId, string path, Stream content, IProgress<long>? progress = null, CancellationToken ct = default)
     {
+        ArgumentNullException.ThrowIfNull(content);
         path = SeafPath.Normalize(path);
         var link = await GetUpdateLinkAsync(libraryId, SeafPath.GetParent(path), ct).ConfigureAwait(false);
         var body = await _t.SendForStringAsync(HttpMethod.Post, link,
@@ -225,6 +227,15 @@ public sealed partial class FilesApi
 
     private Task<SeafOperationResult> Operation(string libraryId, string path, CancellationToken ct, params (string, string?)[] form)
         => _t.SendAsync<SeafOperationResult>(HttpMethod.Post, Url.Of(FileUrl(libraryId)).Q("p", SeafPath.Normalize(path)), SeafTransport.Form(form), ct);
+
+    internal static Func<HttpContent> BuildReplayableUpload(IEnumerable<(string Name, string Value)> fields, string fileName, Stream content, string? contentType, IProgress<long>? progress)
+        => Replayable(content, () => BuildMultipart(fields, fileName, content, contentType, progress));
+
+    internal static Func<HttpContent> BuildUploadBody(IEnumerable<(string Name, string Value)> fields, string fileName, Stream content, SeafUploadOptions options)
+    {
+        var list = fields.ToList();
+        return Replayable(content, () => BuildMultipart(list, fileName, content, options.ContentType, options.Progress));
+    }
 
     private sealed record HistoryResponse { public List<SeafFileRevision> Data { get; init; } = []; }
 }

@@ -11,9 +11,6 @@ public sealed partial class MetadataApi
     /// <summary>The library tag system (Seafile 13+).</summary>
     public MetadataTagsApi Tags { get; }
 
-    /// <summary>Face recognition (Seafile 12–13 only; Seafile 14 removed it and answers 404).</summary>
-    public MetadataFacesApi Faces { get; }
-
     internal MetadataCore Core(string libraryId) => new(_t, Base(libraryId));
 
     // ---------------- records ----------------
@@ -96,10 +93,6 @@ public sealed partial class MetadataApi
         }
         return result;
     }
-
-    /// <summary>Turns OCR on or off. Seafile 12 only; later versions answer 404.</summary>
-    public Task SetOcrEnabledAsync(string libraryId, bool enabled, CancellationToken ct = default)
-        => _t.SendAsync(enabled ? HttpMethod.Put : HttpMethod.Delete, Base(libraryId) + "ocr/", null, ct);
 
     private sealed record ColumnResponse { public SeafMetadataColumn Column { get; init; } = new(); }
     private sealed record DetailsResponse { public List<SeafExtractedFileDetails> Details { get; init; } = []; }
@@ -224,57 +217,4 @@ public sealed class MetadataTagsApi
     /// <summary>Merges tags into <paramref name="targetTagId"/> (files and hierarchy move over) and deletes the merged tags.</summary>
     public Task MergeAsync(string libraryId, string targetTagId, IEnumerable<string> mergedTagIds, CancellationToken ct = default)
         => Core(libraryId).MergeTagsAsync(targetTagId, mergedTagIds, ct);
-}
-
-/// <summary>
-/// Face recognition on a library's photos. Available in Seafile 12–13 Pro with the face-recognition service;
-/// Seafile 14 removed the feature and answers 404 to every call.
-/// </summary>
-public sealed class MetadataFacesApi
-{
-    private readonly SeafTransport _t;
-    internal MetadataFacesApi(SeafTransport t) => _t = t;
-
-    private static string Base(string libraryId) => $"api/v2.1/repos/{Url.Seg(libraryId)}/metadata/";
-
-    public async Task<bool> GetEnabledAsync(string libraryId, CancellationToken ct = default)
-        => (await _t.GetAsync<EnabledResponse>(Base(libraryId) + "face-recognition/", ct).ConfigureAwait(false)).Enabled;
-
-    /// <summary>Turns face recognition on and starts a background task; returns its task id.</summary>
-    public async Task<string?> EnableAsync(string libraryId, CancellationToken ct = default)
-        => (await _t.SendAsync<TaskResponse>(HttpMethod.Post, Base(libraryId) + "face-recognition/", null, ct).ConfigureAwait(false)).TaskId;
-
-    public Task DisableAsync(string libraryId, CancellationToken ct = default)
-        => _t.SendAsync(HttpMethod.Delete, Base(libraryId) + "face-recognition/", null, ct);
-
-    /// <summary>Lists recognized people (face clusters).</summary>
-    public async Task<IReadOnlyList<SeafFaceRecord>> ListPeopleAsync(string libraryId, int start = 0, int limit = 1000, CancellationToken ct = default)
-        => (await _t.GetAsync<FacesResponse>(Url.Of(Base(libraryId) + "face-records/").Q("start", start).Q("limit", limit), ct).ConfigureAwait(false)).Results;
-
-    public Task RenamePersonAsync(string libraryId, string peopleId, string name, CancellationToken ct = default)
-        => _t.SendAsync(HttpMethod.Put, Base(libraryId) + "face-record/", SeafTransport.Json(new { record_id = peopleId, name }), ct);
-
-    /// <summary>Lists the photos (metadata records) of a person.</summary>
-    public async Task<SeafMetadataQueryResult> ListPhotosAsync(string libraryId, string peopleId, int start = 0, int limit = 1000, CancellationToken ct = default)
-        => MetadataCore.ParseQuery(await _t.SendForStringAsync(HttpMethod.Get,
-            Url.Of($"{Base(libraryId)}people-photos/{Url.Seg(peopleId)}/").Q("start", start).Q("limit", limit), null, ct).ConfigureAwait(false));
-
-    /// <summary>Assigns photos (record ids) to one or more people.</summary>
-    public Task AddPhotosAsync(string libraryId, IEnumerable<string> peopleIds, IEnumerable<string> recordIds, CancellationToken ct = default)
-        => _t.SendAsync(HttpMethod.Post, Base(libraryId) + "people-photos/",
-            SeafTransport.Json(new { people_ids = peopleIds.ToList(), record_ids = recordIds.ToList() }), ct);
-
-    /// <summary>Removes photos (record ids) from a person.</summary>
-    public Task RemovePhotosAsync(string libraryId, string peopleId, IEnumerable<string> recordIds, CancellationToken ct = default)
-        => _t.SendAsync(HttpMethod.Delete, $"{Base(libraryId)}people-photos/{Url.Seg(peopleId)}/",
-            SeafTransport.Json(new { record_ids = recordIds.ToList() }), ct);
-
-    /// <summary>Uses a photo (record id) as the person's cover.</summary>
-    public Task SetCoverPhotoAsync(string libraryId, string peopleId, string recordId, CancellationToken ct = default)
-        => _t.SendAsync(HttpMethod.Put, $"{Base(libraryId)}people-cover-photo/{Url.Seg(peopleId)}/",
-            SeafTransport.Json(new { record_id = recordId }), ct);
-
-    private sealed record EnabledResponse { public bool Enabled { get; init; } }
-    private sealed record TaskResponse { public string? TaskId { get; init; } }
-    private sealed record FacesResponse { public List<SeafFaceRecord> Results { get; init; } = []; }
 }

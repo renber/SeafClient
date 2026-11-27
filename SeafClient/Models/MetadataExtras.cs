@@ -141,16 +141,3 @@ public sealed record SeafExtractedFileDetails
     /// <summary>GPS location, e.g. <c>{"lat": 39.08, "lng": 115.2}</c>, or null.</summary>
     [JsonPropertyName("_location")] public JsonElement? Location { get; init; }
 }
-
-/// <summary>A recognized person (face cluster). Face recognition exists in Seafile 12–13 only.</summary>
-public sealed record SeafFaceRecord
-{
-    [JsonPropertyName("_id")] public string Id { get; init; } = "";
-    [JsonPropertyName("_name")] public string? Name { get; init; }
-
-    /// <summary>False for the "unknown people" bucket.</summary>
-    [JsonPropertyName("_is_someone")] public bool IsSomeone { get; init; }
-
-    [JsonPropertyName("_photo_links")] public IReadOnlyList<SeafMetadataLink> PhotoLinks { get; init; } = [];
-    public DateTimeOffset? FileMtime { get; init; }
-}

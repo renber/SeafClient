@@ -3,20 +3,6 @@ using System.Text.Json.Serialization;
 
 namespace SeafClient.Models;
 
-/// <summary>
-/// A page from an admin endpoint that reports <c>has_next_page</c> (and sometimes a total count) instead of only a total.
-/// </summary>
-public sealed record SeafListPage<T>
-{
-    public IReadOnlyList<T> Items { get; init; } = [];
-    public int Page { get; init; }
-    public int PerPage { get; init; }
-    public bool HasNextPage { get; init; }
-
-    /// <summary>Total number of items, when the endpoint reports it.</summary>
-    public int? TotalCount { get; init; }
-}
-
 // ---------------- groups ----------------
 
 /// <summary>A group as seen by the admin API.</summary>

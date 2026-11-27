@@ -190,17 +190,4 @@ public class MetadataExtrasTests(LiveFixture f) : IAsyncLifetime
         Assert.True((await S.Metadata.GetStatusAsync(Lib)).TagsEnabled);
         Assert.Empty(await S.Metadata.Tags.ListAsync(Lib));
     }
-
-    [LiveFact]
-    public async Task Ocr_And_Faces_RemovedInSeafile14()
-    {
-        var info = await S.Server.GetInfoAsync();
-        if (!info.IsPro || info.ParsedVersion is not { Major: >= 14 }) return;
-        await EnableAsync();
-
-        Assert.True((await Assert.ThrowsAsync<SeafException>(() => S.Metadata.SetOcrEnabledAsync(Lib, true))).IsNotFound);
-        Assert.True((await Assert.ThrowsAsync<SeafException>(() => S.Metadata.Faces.GetEnabledAsync(Lib))).IsNotFound);
-        Assert.True((await Assert.ThrowsAsync<SeafException>(() => S.Metadata.Faces.EnableAsync(Lib))).IsNotFound);
-        Assert.True((await Assert.ThrowsAsync<SeafException>(() => S.Metadata.Faces.ListPeopleAsync(Lib))).IsNotFound);
-    }
 }
