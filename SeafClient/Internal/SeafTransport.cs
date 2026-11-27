@@ -126,10 +126,23 @@ internal sealed class SeafTransport : IDisposable
             {
                 response = await _http.SendAsync(request, completion, ct).ConfigureAwait(false);
             }
-            catch (HttpRequestException) when (idempotent && attempt < _options.MaxRetries)
+            catch (HttpRequestException ex)
             {
-                await Task.Delay(Backoff(attempt, null), ct).ConfigureAwait(false);
-                continue;
+                if (idempotent && attempt < _options.MaxRetries)
+                {
+                    await Task.Delay(Backoff(attempt, null), ct).ConfigureAwait(false);
+                    continue;
+                }
+                throw new SeafConnectionException(ex.Message, method, uri, ex);
+            }
+            catch (OperationCanceledException ex) when (!ct.IsCancellationRequested)
+            {
+                if (idempotent && attempt < _options.MaxRetries)
+                {
+                    await Task.Delay(Backoff(attempt, null), ct).ConfigureAwait(false);
+                    continue;
+                }
+                throw new SeafTimeoutException(method, uri, ex);
             }
 
             if (response.IsSuccessStatusCode)
@@ -138,7 +151,7 @@ internal sealed class SeafTransport : IDisposable
             var status = response.StatusCode;
             var retryAfter = GetRetryAfter(response);
             var retryable = status == HttpStatusCode.TooManyRequests
-                || (idempotent && status is HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout);
+                || (idempotent && status is HttpStatusCode.RequestTimeout or HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout);
 
             if (retryable && attempt < _options.MaxRetries)
             {
@@ -149,7 +162,7 @@ internal sealed class SeafTransport : IDisposable
 
             string body;
             try { body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false); }
-            catch { body = ""; }
+            catch (Exception) when (!ct.IsCancellationRequested) { body = ""; }
             finally { response.Dispose(); }
 
             var message = ExtractErrorMessage(body) ?? response.ReasonPhrase ?? status.ToString();
@@ -161,7 +174,18 @@ internal sealed class SeafTransport : IDisposable
 
     private TimeSpan Backoff(int attempt, TimeSpan? retryAfter)
     {
-        var delay = retryAfter ?? TimeSpan.FromMilliseconds(_options.RetryBaseDelay.TotalMilliseconds * Math.Pow(2, attempt));
+        TimeSpan delay;
+        if (retryAfter is { } ra)
+        {
+            delay = ra;
+        }
+        else
+        {
+            var baseMs = _options.RetryBaseDelay.TotalMilliseconds * Math.Pow(2, attempt);
+            var jitter = 0.8 + Random.Shared.NextDouble() * 0.4; // +/- 20%
+            delay = TimeSpan.FromMilliseconds(baseMs * jitter);
+        }
+        if (delay < TimeSpan.Zero) return TimeSpan.Zero;
         return delay > _options.MaxRetryDelay ? _options.MaxRetryDelay : delay;
     }
 

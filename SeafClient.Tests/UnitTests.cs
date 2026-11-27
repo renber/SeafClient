@@ -264,4 +264,71 @@ public class TransportTests
         Assert.Equal("t2", refreshed.Token);
         Assert.Contains((HttpMethod.Delete, "/sub/api/v2.1/share-links/t1/"), calls);
     }
+
+    private sealed class AsyncStubHandler(Func<HttpRequestMessage, int, CancellationToken, Task<HttpResponseMessage>> respond) : HttpMessageHandler
+    {
+        public int Calls;
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+            => respond(request, Calls++, ct);
+    }
+
+    private static SeafSession AsyncSession(AsyncStubHandler handler, int retries = 2) => SeafSession.FromToken(new Uri("http://seaf.test/sub"), "tok",
+        new SeafClientOptions { HttpClient = new HttpClient(handler), MaxRetries = retries, RetryBaseDelay = TimeSpan.FromMilliseconds(1) });
+
+    [Fact]
+    public async Task NetworkError_RetriesIdempotentGet_ThrowsSeafConnectionException_AndDoesNotRetryPost()
+    {
+        var getHandler = new AsyncStubHandler((_, _, _) => Task.FromException<HttpResponseMessage>(new HttpRequestException("Connection refused")));
+        var ex = await Assert.ThrowsAsync<SeafConnectionException>(() => AsyncSession(getHandler, retries: 2).Server.PingAsync());
+        Assert.True(ex.IsTransient);
+        Assert.Equal((HttpStatusCode)0, ex.StatusCode);
+        Assert.IsType<HttpRequestException>(ex.InnerException);
+        Assert.Equal(3, getHandler.Calls);
+
+        var postHandler = new AsyncStubHandler((_, _, _) => Task.FromException<HttpResponseMessage>(new HttpRequestException("Connection refused")));
+        await Assert.ThrowsAsync<SeafConnectionException>(() => AsyncSession(postHandler, retries: 2).Groups.CreateAsync("g"));
+        Assert.Equal(1, postHandler.Calls);
+    }
+
+    [Fact]
+    public async Task Timeout_RetriesGet_AndThrowsSeafTimeoutException()
+    {
+        var handler = new AsyncStubHandler((_, _, _) => Task.FromException<HttpResponseMessage>(new TaskCanceledException("HttpClient.Timeout expired.")));
+        var ex = await Assert.ThrowsAsync<SeafTimeoutException>(() => AsyncSession(handler, retries: 2).Server.GetInfoAsync());
+        Assert.True(ex.IsTransient);
+        Assert.Equal(HttpStatusCode.RequestTimeout, ex.StatusCode);
+        Assert.IsType<TaskCanceledException>(ex.InnerException);
+        Assert.Equal(3, handler.Calls);
+    }
+
+    private sealed class CancelingBodyContent(CancellationTokenSource cts) : HttpContent
+    {
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) => Task.CompletedTask;
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context, CancellationToken ct)
+        {
+            cts.Cancel();
+            return Task.FromCanceled(cts.Token);
+        }
+        protected override bool TryComputeLength(out long length) { length = 0; return false; }
+    }
+
+    [Fact]
+    public async Task CallerCancellation_PropagatesOperationCanceledException_EvenOnErrorBody()
+    {
+        using var cts = new CancellationTokenSource();
+        var handler = new AsyncStubHandler((_, _, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new CancelingBodyContent(cts) }));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => AsyncSession(handler, retries: 0).Server.GetInfoAsync(cts.Token));
+    }
+
+    [Fact]
+    public async Task RequestTimeout408_RetriesIdempotentGet()
+    {
+        var handler = new StubHandler((_, n) =>
+            n == 0 ? new HttpResponseMessage(HttpStatusCode.RequestTimeout) : new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("\"pong\"") });
+
+        Assert.True(await Session(handler, retries: 1).Server.PingAsync());
+        Assert.Equal(2, handler.Calls);
+    }
 }
