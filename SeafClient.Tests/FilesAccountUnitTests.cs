@@ -141,6 +141,45 @@ public class FilesAccountUnitTests
         AssertUnquotedMultipart(r.ContentTypes[0], r.Bodies[0]);
     }
 
+    private sealed class SequenceHandler(Func<HttpRequestMessage, int, Task<HttpResponseMessage>> respond) : HttpMessageHandler
+    {
+        public int Calls;
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+            => respond(request, Calls++);
+    }
+
+    [Fact]
+    public async Task UploadAvatar_RetriesOn429_DoesNotDisposeCallerStream()
+    {
+        byte[]? uploadedBytes = null;
+        var handler = new SequenceHandler(async (req, attempt) =>
+        {
+            if (attempt == 0)
+            {
+                if (req.Content != null) await req.Content.ReadAsByteArrayAsync();
+                return new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+            }
+
+            uploadedBytes = req.Content == null ? null : await req.Content.ReadAsByteArrayAsync();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"avatar_url":"http://seaf.test/media/avatars/pic.png"}""")
+            };
+        });
+
+        using var s = SeafSession.FromToken(new Uri("http://seaf.test/"), "tok",
+            new SeafClientOptions { HttpClient = new HttpClient(handler), MaxRetries = 2, RetryBaseDelay = TimeSpan.FromMilliseconds(1) });
+        using var ms = new MemoryStream([10, 20, 30, 40]);
+
+        var url = await s.Account.UploadAvatarAsync(ms, "a\"b\\c.png");
+
+        Assert.Equal("http://seaf.test/media/avatars/pic.png", url);
+        Assert.Equal(2, handler.Calls);
+        Assert.True(ms.CanRead);
+        Assert.Equal(4, ms.Position);
+        Assert.NotNull(uploadedBytes);
+    }
+
     private static void AssertUnquotedMultipart(string? contentType, string body)
     {
         Assert.NotNull(contentType);

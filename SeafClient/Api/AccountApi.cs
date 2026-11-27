@@ -46,9 +46,9 @@ public sealed class AccountApi
             }
 
             var form = SeafTransport.CreateMultipart();
-            var file = new StreamContent(image);
+            var file = new ProgressStreamContent(image, null);
             file.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-            file.Headers.TryAddWithoutValidation("Content-Disposition", $"form-data; name=\"avatar\"; filename=\"{fileName.Replace("\"", "\\\"")}\"");
+            file.Headers.TryAddWithoutValidation("Content-Disposition", $"form-data; name=\"avatar\"; filename=\"{fileName.Replace("\\", "\\\\").Replace("\"", "\\\"")}\"");
             form.Add(file);
             var size = new ByteArrayContent(Encoding.UTF8.GetBytes(avatarSize.ToString(System.Globalization.CultureInfo.InvariantCulture)));
             size.Headers.TryAddWithoutValidation("Content-Disposition", "form-data; name=\"avatar_size\"");

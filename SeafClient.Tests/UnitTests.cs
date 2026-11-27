@@ -148,4 +148,120 @@ public class TransportTests
         await Session(handler).Directories.ListAsync("lib", "/a b/c&d#e");
         Assert.Equal("?p=%2Fa%20b%2Fc%26d%23e", seen!.Query);
     }
+
+    [Fact]
+    public void SeafException_StatusHelpers_Distinguish401And403()
+    {
+        var unauth = new SeafException(HttpStatusCode.Unauthorized, "Invalid token");
+        Assert.True(unauth.IsUnauthorized);
+        Assert.False(unauth.IsForbidden);
+
+        var forbidden = new SeafException(HttpStatusCode.Forbidden, "Permission denied");
+        Assert.False(forbidden.IsUnauthorized);
+        Assert.True(forbidden.IsForbidden);
+
+        Assert.True(new SeafException(HttpStatusCode.BadRequest, "Bad").IsBadRequest);
+        Assert.True(new SeafRateLimitException("Slow", null, null, null, null).IsRateLimited);
+        Assert.True(new SeafException(HttpStatusCode.BadGateway, "Bad gateway").IsServerError);
+    }
+
+    [Fact]
+    public async Task AuthPingAsync_ReturnsFalseOn401_ThrowsOn403()
+    {
+        var h401 = new StubHandler((_, _) => new HttpResponseMessage(HttpStatusCode.Unauthorized) { Content = new StringContent("""{"detail":"Invalid token"}""") });
+        Assert.False(await Session(h401, retries: 0).Server.AuthPingAsync());
+
+        var h403 = new StubHandler((_, _) => new HttpResponseMessage(HttpStatusCode.Forbidden) { Content = new StringContent("""{"detail":"Forbidden"}""") });
+        var ex = await Assert.ThrowsAsync<SeafException>(() => Session(h403, retries: 0).Server.AuthPingAsync());
+        Assert.True(ex.IsForbidden);
+    }
+
+    [Fact]
+    public async Task ShareLinks_GetOrCreate_DefaultReuses_OptionsEnforceLifetimeAndPermissions()
+    {
+        var expiresSoon = DateTimeOffset.UtcNow.AddMinutes(5);
+        var expiresLater = DateTimeOffset.UtcNow.AddDays(7);
+        var calls = new List<(HttpMethod Method, string Path)>();
+        var existingJson = JsonSerializer.Serialize(new[]
+        {
+            new
+            {
+                token = "t1",
+                link = "http://seaf.test/d/t1/",
+                repo_id = "lib",
+                path = "/a",
+                expire_date = expiresSoon,
+                is_expired = false,
+                password = "",
+                permissions = new { can_edit = false, can_download = true, can_upload = true }
+            }
+        });
+
+        var handler = new StubHandler((req, _) =>
+        {
+            calls.Add((req.Method, req.RequestUri!.AbsolutePath));
+            if (req.Method == HttpMethod.Get)
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(existingJson) };
+
+            if (req.Method == HttpMethod.Put)
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(JsonSerializer.Serialize(new
+                    {
+                        token = "t1",
+                        link = "http://seaf.test/d/t1/",
+                        repo_id = "lib",
+                        path = "/a",
+                        expire_date = expiresLater,
+                        is_expired = false,
+                        password = "",
+                        permissions = new { can_edit = false, can_download = true, can_upload = false }
+                    }))
+                };
+
+            if (req.Method == HttpMethod.Post)
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(JsonSerializer.Serialize(new
+                    {
+                        token = "t2",
+                        link = "http://seaf.test/d/t2/",
+                        repo_id = "lib",
+                        path = "/a",
+                        expire_date = expiresLater,
+                        is_expired = false,
+                        password = "secret-password",
+                        permissions = new { can_edit = false, can_download = true, can_upload = false }
+                    }))
+                };
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+
+        using var s = Session(handler, retries: 0);
+
+        var (reused, created1) = await s.ShareLinks.GetOrCreateAsync("lib", "/a", new SeafShareLinkOptions { CanUpload = false });
+        Assert.False(created1);
+        Assert.Equal("t1", reused.Token);
+        Assert.True(reused.Permissions.CanUpload);
+
+        calls.Clear();
+        var (updated, created2) = await s.ShareLinks.GetOrCreateAsync("lib", "/a", new SeafShareLinkOptions { CanUpload = false, RequireMatchingPermissions = true });
+        Assert.False(created2);
+        Assert.False(updated.Permissions.CanUpload);
+        Assert.Contains((HttpMethod.Put, "/sub/api/v2.1/share-links/t1/"), calls);
+
+        calls.Clear();
+        var (recreated, created3) = await s.ShareLinks.GetOrCreateAsync("lib", "/a", new SeafShareLinkOptions { Password = "secret-password", RequireMatchingPermissions = true });
+        Assert.True(created3);
+        Assert.Equal("t2", recreated.Token);
+        Assert.Contains((HttpMethod.Delete, "/sub/api/v2.1/share-links/t1/"), calls);
+        Assert.Contains((HttpMethod.Post, "/sub/api/v2.1/share-links/"), calls);
+
+        calls.Clear();
+        var (refreshed, created4) = await s.ShareLinks.GetOrCreateAsync("lib", "/a", new SeafShareLinkOptions { MinRemainingLifetime = TimeSpan.FromMinutes(30), ExpiresAt = expiresLater });
+        Assert.True(created4);
+        Assert.Equal("t2", refreshed.Token);
+        Assert.Contains((HttpMethod.Delete, "/sub/api/v2.1/share-links/t1/"), calls);
+    }
 }

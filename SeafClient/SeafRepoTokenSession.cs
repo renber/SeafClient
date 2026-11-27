@@ -66,11 +66,11 @@ public sealed class SeafRepoTokenSession : IDisposable
         return info;
     }
 
-    /// <summary>Returns true if the token is accepted by the server, false on 401/403.</summary>
+    /// <summary>Returns true if the token is accepted by the server, false on 401.</summary>
     public async Task<bool> PingAsync(CancellationToken ct = default)
     {
         try { await GetInfoAsync(ct).ConfigureAwait(false); return true; }
-        catch (SeafException e) when (e.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden) { return false; }
+        catch (SeafException e) when (e.IsUnauthorized) { return false; }
     }
 
     public void Dispose() => _transport.Dispose();

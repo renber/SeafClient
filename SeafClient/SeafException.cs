@@ -32,8 +32,12 @@ public class SeafException : Exception
     public Uri? RequestUri { get; }
 
     public bool IsNotFound => StatusCode == HttpStatusCode.NotFound;
-    public bool IsUnauthorized => StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden;
+    public bool IsUnauthorized => StatusCode == HttpStatusCode.Unauthorized;
+    public bool IsForbidden => StatusCode == HttpStatusCode.Forbidden;
+    public bool IsBadRequest => StatusCode == HttpStatusCode.BadRequest;
     public bool IsConflict => StatusCode == HttpStatusCode.Conflict;
+    public bool IsRateLimited => StatusCode == HttpStatusCode.TooManyRequests;
+    public bool IsServerError => (int)StatusCode >= 500;
 
     private static string BuildMessage(HttpStatusCode code, string message, HttpMethod? method, Uri? uri)
     {

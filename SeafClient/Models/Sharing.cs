@@ -74,6 +74,18 @@ public sealed class SeafShareLinkOptions
 
     /// <summary>Allow uploads through the link (directories only).</summary>
     public bool CanUpload { get; set; }
+
+    /// <summary>
+    /// When true, <see cref="Api.ShareLinksApi.GetOrCreateAsync"/> verifies that an existing link's permissions and
+    /// password presence match these options (updating or recreating the link if not).
+    /// </summary>
+    public bool RequireMatchingPermissions { get; set; }
+
+    /// <summary>
+    /// When set, <see cref="Api.ShareLinksApi.GetOrCreateAsync"/> treats any existing link with less than this
+    /// remaining lifetime as expired, deletes it, and creates a fresh link.
+    /// </summary>
+    public TimeSpan? MinRemainingLifetime { get; set; }
 }
 
 /// <summary>An internal "smart link" that survives renames/moves (only works for logged-in users).</summary>

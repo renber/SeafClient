@@ -39,18 +39,52 @@ public sealed partial class ShareLinksApi
     }
 
     /// <summary>
-    /// Returns an unexpired share link for the item if one exists, otherwise creates one. Expired links for the item are deleted.
+    /// Returns an unexpired share link for the item if one exists, otherwise creates one. Expired (or stale, when
+    /// <see cref="SeafShareLinkOptions.MinRemainingLifetime"/> is set) links for the item are deleted.
     /// </summary>
     /// <returns>The link and whether it was newly created.</returns>
     public async Task<(SeafShareLink Link, bool Created)> GetOrCreateAsync(string libraryId, string path, SeafShareLinkOptions? options = null, CancellationToken ct = default)
     {
         var existing = await ListAsync(libraryId, path, ct).ConfigureAwait(false);
-        foreach (var expired in existing.Where(l => l.IsExpiredNow))
-            await DeleteAsync(expired.Token, ct).ConfigureAwait(false);
+        var now = DateTimeOffset.UtcNow;
+        var minLifetime = options?.MinRemainingLifetime;
 
-        var valid = existing.Where(l => !l.IsExpiredNow).OrderByDescending(l => l.Created).FirstOrDefault();
-        if (valid != null) return (valid, false);
+        foreach (var stale in existing.Where(l => IsStale(l, now, minLifetime)))
+            await DeleteAsync(stale.Token, ct).ConfigureAwait(false);
+
+        var valid = existing.Where(l => !IsStale(l, now, minLifetime)).OrderByDescending(l => l.Created).FirstOrDefault();
+        if (valid != null)
+        {
+            if (options is { RequireMatchingPermissions: true })
+            {
+                var wantsPassword = !string.IsNullOrEmpty(options.Password);
+                if (valid.HasPassword != wantsPassword)
+                {
+                    await DeleteAsync(valid.Token, ct).ConfigureAwait(false);
+                    return (await CreateAsync(libraryId, path, options, ct).ConfigureAwait(false), true);
+                }
+
+                var p = valid.Permissions;
+                if (p.CanEdit != options.CanEdit || p.CanDownload != options.CanDownload || p.CanUpload != options.CanUpload)
+                {
+                    var updated = await UpdateAsync(valid.Token, new SeafShareLinkUpdate
+                    {
+                        CanEdit = options.CanEdit,
+                        CanDownload = options.CanDownload,
+                        CanUpload = options.CanUpload,
+                        ExpiresAt = options.ExpiresAt,
+                        ExpireDays = options.ExpireDays,
+                    }, ct).ConfigureAwait(false);
+                    return (updated, false);
+                }
+            }
+            return (valid, false);
+        }
+
         return (await CreateAsync(libraryId, path, options, ct).ConfigureAwait(false), true);
+
+        static bool IsStale(SeafShareLink l, DateTimeOffset utcNow, TimeSpan? min)
+            => l.IsExpiredNow || (min is { } m && l.ExpiresAt is { } exp && exp - utcNow < m);
     }
 
     public Task DeleteAsync(string token, CancellationToken ct = default)
